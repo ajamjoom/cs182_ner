@@ -56,7 +56,7 @@ def webhook():
                             send_message(sender_id, "alright thanks!")
 
                     else:
-                        send_quickrep_message(sender_id, "What's up dude, I'll start tagging your messages with entities pretty soon!")
+                        send_quickrep_message(sender_id, "Tokenized NER text should be here")
 
                 if messaging_event.get("postback"):  # user clicked/tapped "postback" button in earlier message
                     pass
