@@ -18,7 +18,7 @@ def verify():
             return "Verification token mismatch", 403
         return request.args["hub.challenge"], 200
 
-    return "Hello biatch", 200
+    return "CS182 NER Algorithm by Abdulrahman Jamjoom and Josh Kuppersmith", 200
 
 
 @app.route('/', methods=['POST'])
@@ -27,7 +27,8 @@ def webhook():
     # endpoint for processing incoming messaging events
 
     data = request.get_json()
-    log(data)  # you may not want to log every incoming message in production, but it's good for testing
+    log(data)
+
 
     if data["object"] == "page":
 
@@ -56,7 +57,7 @@ def webhook():
 
 def send_message(recipient_id, message_text):
 
-    log("sending message to {recipient}: {text}".format(recipient=recipient_id, text=message_text))
+    # log("sending message to {recipient}: {text}".format(recipient=recipient_id, text=message_text))
 
     params = {
         "access_token": os.environ["PAGE_ACCESS_TOKEN"]
@@ -74,8 +75,8 @@ def send_message(recipient_id, message_text):
     })
     r = requests.post("https://graph.facebook.com/v2.6/me/messages", params=params, headers=headers, data=data)
     if r.status_code != 200:
-        log(r.status_code)
-        log(r.text)
+        # log(r.status_code)
+        # log(r.text)
 
 
 def log(msg, *args, **kwargs):  # simple wrapper for logging to stdout on heroku
