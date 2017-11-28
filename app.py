@@ -27,7 +27,7 @@ def webhook():
     # endpoint for processing incoming messaging events
 
     data = request.get_json()
-    log(data)  # you may not want to log every incoming message in production, but it's good for testing
+    # log(data)
 
     if data["object"] == "page":
 
@@ -40,7 +40,10 @@ def webhook():
                     recipient_id = messaging_event["recipient"]["id"]  # the recipient's ID, which should be your page's facebook ID
                     message_text = messaging_event["message"]["text"]  # the message's text
 
-                    send_message(sender_id, "roger that!")
+                    log("message_text: ")
+                    log(message_text)
+
+                    send_message(sender_id, "What's up dude, I'll start tagging your messages with entities pretty soon!")
 
                 if messaging_event.get("delivery"):  # delivery confirmation
                     pass
@@ -56,7 +59,7 @@ def webhook():
 
 def send_message(recipient_id, message_text):
 
-    log("sending message to {recipient}: {text}".format(recipient=recipient_id, text=message_text))
+    # log("sending message to {recipient}: {text}".format(recipient=recipient_id, text=message_text))
 
     params = {
         "access_token": os.environ["PAGE_ACCESS_TOKEN"]
@@ -70,7 +73,13 @@ def send_message(recipient_id, message_text):
         },
         "message": {
             "text": message_text
-        }
+        },
+        "buttons":[
+          {
+            "type":"postback",
+            "title":"Bookmark Item",
+            "payload":"DEVELOPER_DEFINED_PAYLOAD"
+          }
     })
     r = requests.post("https://graph.facebook.com/v2.6/me/messages", params=params, headers=headers, data=data)
     if r.status_code != 200:
