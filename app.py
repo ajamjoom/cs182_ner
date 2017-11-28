@@ -72,12 +72,22 @@ def send_message(recipient_id, message_text):
             "id": recipient_id
         },
         "message": {
-            "text": message_text,
+            "text": message_text + '. Did we get the entity tags right?',
             "quick_replies":[
               {
                 "content_type":"text",
                 "title":"YES!",
                 "payload":"yes"
+              },
+              {
+                "content_type":"text",
+                "title":"No :(",
+                "payload":"no"
+              },
+              {
+                "content_type":"text",
+                "title":"Not sure",
+                "payload":"not sure"
               }
             ]
         }
