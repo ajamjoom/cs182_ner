@@ -47,12 +47,12 @@ def webhook():
                         quick_payload = messaging_event["message"]["quick_reply"]["payload"]
                         
                         if quick_payload == "no": # ask for correct parsing
-                            send_message(sender_id, "Shoot, sorry about that. Would be great if you send us the correct tagged tokens. You can send it in the same formate we sent it to you. Thanks!")
+                            send_message(sender_id, "Shoot, sorry about that. Would be great if you send us the correct tagged tokens in the format we used.")
                         
-                        elif quick_payload == "yes": # thank the user
+                        elif quick_payload == "yes": # Correct parsing -> add it to training data
                             send_message(sender_id, "Perfect, thanks for letting us know!")
 
-                        elif quick_payload == "not sure": # no worries
+                        elif quick_payload == "not sure": # Don't add NER to training data
                             send_message(sender_id, "alright thanks!")
 
                     else:
