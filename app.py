@@ -74,14 +74,15 @@ def send_message(recipient_id, message_text):
         "message": {
             "text": message_text
         },
-        # "buttons":[
-        #   {
-        #     "type":"postback",
-        #     "title":"Bookmark Item",
-        #     "payload":"DEVELOPER_DEFINED_PAYLOAD"
-        #   }]
+        "quick_replies":[
+          {
+            "content_type":"text",
+            "title":"YES!",
+            "payload":"yes"
+          }
+        ]
     })
-    r = requests.post("https://graph.facebook.com/v2.6/me/buttons", params=params, headers=headers, data=data)
+    r = requests.post("https://graph.facebook.com/v2.6/me/messages", params=params, headers=headers, data=data)
     if r.status_code != 200:
         log(r.status_code)
         log(r.text)
