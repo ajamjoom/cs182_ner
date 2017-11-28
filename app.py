@@ -43,7 +43,7 @@ def webhook():
                     log("message_text: ")
                     log(message_text)
 
-                    send_message(sender_id, "What's up dude, I'll start tagging your messages with entities pretty soon!")
+                    send_quickrep_message(sender_id, "What's up dude, I'll start tagging your messages with entities pretty soon!")
 
                 if messaging_event.get("delivery"):  # delivery confirmation
                     pass
@@ -52,12 +52,13 @@ def webhook():
                     pass
 
                 if messaging_event.get("postback"):  # user clicked/tapped "postback" button in earlier message
-                    pass
+                    log("messaging_event: ")
+                    log(messaging_event)
 
     return "ok", 200
 
 
-def send_message(recipient_id, message_text):
+def send_quickrep_message(recipient_id, message_text):
 
     # log("sending message to {recipient}: {text}".format(recipient=recipient_id, text=message_text))
 
