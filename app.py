@@ -33,6 +33,8 @@ def webhook():
 
         for entry in data["entry"]:
             for messaging_event in entry["messaging"]:
+                log("messaging_event: ")
+                log(messaging_event)
 
                 if messaging_event.get("message"):  # someone sent us a message
 
@@ -52,8 +54,7 @@ def webhook():
                     pass
 
                 if messaging_event.get("postback"):  # user clicked/tapped "postback" button in earlier message
-                    log("messaging_event: ")
-                    log(messaging_event)
+                    log("FROM_POSTBACK BRUH")
 
     return "ok", 200
 
