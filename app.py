@@ -41,23 +41,51 @@ def webhook():
                     sender_id = messaging_event["sender"]["id"]        # the facebook ID of the person sending you the message
                     recipient_id = messaging_event["recipient"]["id"]  # the recipient's ID, which should be your page's facebook ID
                     message_text = messaging_event["message"]["text"]  # the message's text
+                    quick_reply_bool = messaging_event["message"].get("quick_reply")
 
-                    log("message_text: ")
-                    log(message_text)
+                    if quick_reply_bool:
+                        quick_payload = messaging_event["message"]["quick_reply"]["payload"]
+                        
+                        if quick_payload == "no": # ask for correct parsing
+                            send_message(sender_id, "Shoot, sorry about that. Would be great if you send us the correct tagged tokens. You can send it in the same formate we sent it to you. Thanks!")
+                        
+                        elif quick_payload == "yes": # thank the user
+                            send_message(sender_id, "Perfect, thanks for letting us know!")
 
-                    send_quickrep_message(sender_id, "What's up dude, I'll start tagging your messages with entities pretty soon!")
+                        elif quick_payload == "not sure": # no worries
+                            send_message(sender_id, "alright thanks!")
 
-                if messaging_event.get("delivery"):  # delivery confirmation
-                    pass
-
-                if messaging_event.get("optin"):  # optin confirmation
-                    pass
+                    else:
+                        send_quickrep_message(sender_id, "What's up dude, I'll start tagging your messages with entities pretty soon!")
 
                 if messaging_event.get("postback"):  # user clicked/tapped "postback" button in earlier message
-                    log("FROM_POSTBACK BRUH")
+                    pass
 
     return "ok", 200
 
+
+def send_message(recipient_id, message_text):
+
+    # log("sending message to {recipient}: {text}".format(recipient=recipient_id, text=message_text))
+
+    params = {
+        "access_token": os.environ["PAGE_ACCESS_TOKEN"]
+    }
+    headers = {
+        "Content-Type": "application/json"
+    }
+    data = json.dumps({
+        "recipient": {
+            "id": recipient_id
+        },
+        "message": {
+            "text": message_text,
+        }
+    })
+    r = requests.post("https://graph.facebook.com/v2.6/me/messages", params=params, headers=headers, data=data)
+    if r.status_code != 200:
+        log(r.status_code)
+        log(r.text)
 
 def send_quickrep_message(recipient_id, message_text):
 
