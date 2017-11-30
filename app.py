@@ -58,7 +58,8 @@ def webhook():
                     else:
                         msg_start = message_text.split(':')[0]
                         
-                        if msg_start == 'NER': # parse user text and add it to training data
+                        if msg_start == 'NER': # parse user text and add it to training data 
+                            # reply to user with error if the text is not in the correct format
                             send_message(sender_id, "Thank you for improving our algorithm!")     
                         else:
                             send_quickrep_message(sender_id, "Tokenized NER text should be here")
