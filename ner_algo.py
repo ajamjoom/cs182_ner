@@ -1,4 +1,5 @@
 import json
+import csv, codecs, cStringIO
 import pandas as pd
 import numpy as np
 from sklearn.feature_extraction import DictVectorizer
@@ -46,7 +47,7 @@ tag_list = list(set(y_train.values))
 
 
 
-#### SECTION II: [ONLY DO THIS ONCE] PreProcessing the Shape and Part-of-Speech dictionaries
+#### SECTION II: [ONLY RUN THIS SECTION ONCE] PreProcessing the Shape and Part-of-Speech dictionaries
 
 # Init empty dictionaries to use for making predictions. Dict of Dicts
 shape_probs = {} # {Key= shape : vale={key= entity-tage: value= probability}}
@@ -54,6 +55,19 @@ pos_probs = {}   # {Key= part-of-speech : vale={key= entity-tage: value= probabi
 word_probs = {}  # {Key= unique-word : vale={key= entity-tage: value= probability}}
 
 alpha = 1.0
+
+# Upload dictionary to specified csv file
+# You need to create an empty csv file first with the correct name (name = indicator name in the original data file. Ex. shape.csv)
+def csv_from_dict(csv_name, dict_name):
+    # Truncate content of file if there is anything there
+    f = open(csv_name, "w+")
+    f.close()
+    # Upload new content to the selected empty csv file
+    with open(csv_name, 'wb') as csv_file:
+        writer = csv.writer(csv_file)
+        for key, value in dict_name.items():
+           # writer.writerow([key.encode('utf-8').strip(), value])
+           writer.writerow([key, value]) # This doesn't work for the words dictionary
 
 # Creates a dict of dicts as follows -> {Key= indicator_variable : vale={key= entity-tage: value= probability}}
 def create_entity_dict(indicator_list, indicator_name, indicator_dict_name):
@@ -66,19 +80,52 @@ def create_entity_dict(indicator_list, indicator_name, indicator_dict_name):
                     count += 1
             tag_prob_dict.update({str(tag) : (1.0*count + alpha)/(len(data_small[data_small[indicator_name] == item]) + alpha*len(indicator_list))})
         indicator_dict_name[item] = tag_prob_dict
+    csv_from_dict(indicator_name+'.csv', indicator_dict_name)
 
 # Populate the shape dictionary from the small training data set
-create_entity_dict(shape_list,'shape', shape_probs)
+# create_entity_dict(shape_list,'shape', shape_probs) # Uncomment to recreate CSV file
     
-# # Populate the part-of-speech dictionary from the small training data set
-create_entity_dict(pos_list,'pos', pos_probs)
+# Populate the part-of-speech dictionary from the small training data set
+# create_entity_dict(pos_list,'pos', pos_probs) # Uncomment to recreate CSV file
 
-# # Populate the words dictionary from the small training data set
-create_entity_dict(word_list,'word', word_probs)
+# Populate the words dictionary from the small training data set
+# create_entity_dict(word_list,'word', word_probs) # Uncomment to recreate CSV file
 
 
 
-#### SECTION III: Single Indicator Variable Prediction Algorithm
+#### SECTION III: Create Dicts from CSV files
+
+def dict_from_csv(csv_name):
+    with open(csv_name, 'rb') as csv_file:
+        init_dict = dict(csv.reader(csv_file))
+        new_dict = {}
+        for key, value in init_dict.iteritems():
+            new_dict[unicode(key, 'utf-8')] = value
+    return new_dict
+
+# Populate the pos, word, and shape dicts from their CSV files
+pos_probs = dict_from_csv('pos.csv')
+shape_probs = dict_from_csv('shape.csv')
+word_probs = dict_from_csv('word.csv')
+
+# TEST to debug why reading from CSV outputs an error
+
+# print "TEST: ", test_pos_probs
+# print "GENERATED: ", pos_probs
+# print test_pos_probs
+# value = { k : test_pos_probs[k] for k in set(test_pos_probs) - set(pos_probs) }
+# print "DIFFS: ", value
+# print "TEST: ", test_pos_probs
+# print "REAL", pos_probs
+
+### WHY WOULD THEY NOT BE EQUAL?
+# if test_pos_probs == pos_probs:
+#     print "Both Dicts are the same"
+# else:
+#     print "fucked up shit"
+
+
+#### SECTION IV: Single Indicator Variable Prediction Algorithm
 
 pred_train = []
 pred_valid = []
@@ -133,12 +180,12 @@ train_validate_modal(data_small,'pos',pos_probs)
 
 
 
-#### SECTION IIII: Multiple Indicator Variables's Prediction Algorithm
+#### SECTION V: Multiple Indicator Variables's Prediction Algorithm
 
 # then we can incorporate multiple features in the algorithm by multiply probabilities and taking a max
 # or adding log probabilities. This is more complicated, but will evertually be the basis of the final model. 
 
-# training prediction
+training prediction
 count_correct = 0
 for i in range(len(data_small)):
     if i % 100 == 0:
@@ -155,6 +202,4 @@ for i in range(len(data_small)):
         count_correct += 1
 train_accuracy = 1.0*count_correct / len(data_small)
 print "Train Accuracy using pos, shape, and word: " + str(train_accuracy)
-
-
 
