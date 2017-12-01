@@ -46,7 +46,6 @@ pos_list = list(set(x_train['pos']))      # Word's part of speech options
 shape_list = list(set(x_train['shape']))  # Shape of each word
 word_list = list(set(data_small['word'])) # All the words in the small data set [Change to large later on]
 
-
 # Different name entity tags available
 tag_list = list(set(y_train.values)) 
 
@@ -73,7 +72,7 @@ def csv_from_dict(csv_name, dict_name):
     with open(csv_name, 'wb') as csv_file:
         writer = csv.writer(csv_file)
         for key, value in dict_name.items():
-           # writer.writerow([key.encode('utf-8').strip(), value])
+           # writer.writerow([key.encode('utf-8').strip(), value]) # This works for all dicts
            writer.writerow([key, value]) # This doesn't work for the words dictionary
 
 # Creates a dict of dicts as follows -> {Key= indicator_variable : vale={key= entity-tage: value= probability}}
@@ -110,51 +109,34 @@ def dict_from_csv(csv_name):
             new_dict[unicode(key, 'utf-8')] = ast.literal_eval(value)
     return new_dict
 
-def dict_from_csv2(csv_name):
-    new_dict = {}
-    reader = csv.reader(open(csv_name, 'r'))
-    for key,val in reader:
-        new_dict[key] = val
-    return new_dict
-
 # Populate the pos, word, and shape dicts from their CSV files
 pos_probs = dict_from_csv('pos.csv')
 shape_probs = dict_from_csv('shape.csv')
 word_probs = dict_from_csv('word.csv')
 
-#pos_probs2 = dict_from_csv2('pos.csv')
-#shape_probs2 = dict_from_csv2('shape.csv')
-#word_probs2 = dict_from_csv2('word.csv')
+# Check if the dictionaries have correct probabilities
+def test_dict_probs(indicator_dict, dict_name):    
+    for indic_key, indic_val in indicator_dict.iteritems():
+        sum_prob = 0.0
+        for tag, prob in indic_val.iteritems():
+            sum_prob += prob
+            if sum_prob > 1:
+                print "prob_sum: ", sum_prob
+                print "PROB SUM ERROR AT: "+dict_name+" for key"+indic_key
+                print "______________________"
+                break;
+    print "done with "+dict_name
+    print "__________________"
 
-# TEST to debug why reading from CSV outputs an error
-
-# print "TEST: ", test_pos_probs
-# print "GENERATED: ", pos_probs
-# print test_pos_probs
-# value = { k : test_pos_probs[k] for k in set(test_pos_probs) - set(pos_probs) }
-# print "DIFFS: ", value
-# print "TEST: ", test_pos_probs
-# print "REAL", pos_probs
-
-### WHY WOULD THEY NOT BE EQUAL?
-# if pos_probs2 == pos_probs:
-#     print "Both Pos Dicts are the same"
-# else:
-#     print "fucked up shit"
-
-# if shape_probs2 == shape_probs:
-#     print "Both Shape Dicts are the same"
-# else:
-#     print "fucked up shit"
-
-# if word_probs2 == word_probs:
-#     print "Both Word Dicts are the same"
-# else:
-#     print "fucked up shit"
+# Uncomment this to run individual tests
+# test_dict_probs(pos_probs, "pos")
+# test_dict_probs(shape_probs, "shape")
+# test_dict_probs(word_probs, "word")
 
 
 
 #### SECTION IV: Single Indicator Variable Prediction Algorithm
+
 # Baseline Accuracy
 num_O = len(data[data['tag'] == 'O'])
 percent = 1.0*num_O/len(data)
@@ -168,7 +150,6 @@ def train_validate_model(data_set, indicator_name, indicator_dict_name):
     
     pred_train = []
     pred_valid = []
-
 
     count_correct = 0
     data_set_len = len(data_set)
@@ -202,101 +183,99 @@ def train_validate_model(data_set, indicator_name, indicator_dict_name):
     valid_accuracy = 1.0*count_correct / data_valid_len
     print "Validation Accuracy using " + indicator_name + ': ' + str(valid_accuracy)
 
-# Make predictions based off of "shape"
-train_validate_model(data_small,'shape',shape_probs)
-print '-----------------------------------------------'
+# # Make predictions based off of "shape"
+# train_validate_model(data_small,'shape',shape_probs)
+# print '-----------------------------------------------'
 
 # # Make predictions based off of "words"
-train_validate_model(data_small,'word',word_probs)
-print '-----------------------------------------------'
+# train_validate_model(data_small,'word',word_probs)
+# print '-----------------------------------------------'
 
 # # Make predictions based off of "part-of-speech"
-train_validate_model(data_small,'pos',pos_probs)
-print '-----------------------------------------------'
+# train_validate_model(data_small,'pos',pos_probs)
+# print '-----------------------------------------------'
 
 
-#### SECTION V: Multiple Indicator Variables's Prediction Algorithm
+#### SECTION V: Generic Multiple Indicator Variables's Prediction Algorithm
 
 # then we can incorporate multiple features in the algorithm by multiply probabilities and taking a max
 # or adding log probabilities. This is more complicated, but will evertually be the basis of the final model. 
 
-pred_train = []
-pred_valid = []
+def multi_var_ner(shape_coeff, pos_coeff, word_coeff):
 
-# # training prediction
-count_correct = 0
-for i in range(len(data_small)):
-    #if i % 100 == 0:
-    #    print(i)
-    #tag_probs = {}
-    max_prob = 0.0
-    max_tag = ''
-    for tag in tag_list:  
-        # try, except to ignore one value when a word has not been seen before!
-        try:      
-            pos_p = pos_probs[data_small.iloc[i]['pos']][tag]
-        except:
-            pos_p = 1.0
-        try:
-            shape_p = shape_probs[data_small.iloc[i]['shape']][tag]
-        except:
-            shape_p = 1.0
-        try:
-            word_p = word_probs[data_small.iloc[i]['word']][tag]
-        except:
-            word_p = 1.0
-        prob = pos_p * shape_p * word_p 
-        if prob > max_prob:
-            max_prob = prob
-            max_tag = tag
-    #pred_tag = max(tag_probs.iterkeys(), key=(lambda key: tag_probs[key]))
-    pred_tag = max_tag
-    pred_train.append(pred_tag)
-    if data_small.iloc[i]['tag'] == pred_tag:
-        count_correct += 1
-train_accuracy = 1.0*count_correct / len(data_small)
-print "Train Accuracy using pos, shape, and word (evenly weighted): " + str(train_accuracy)
+    pred_train = []
+    pred_valid = []
 
-# validation prediction
-count_correct = 0
-for i in range(len(data_valid)):
-    #if i % 1000 == 0:
-    #    print(i)
-    max_prob = 0.0
-    max_tag = ''
-    for tag in tag_list:        
-        # try, except to ignore one value when a word has not been seen before!
-        try:      
-            pos_p = pos_probs[data_valid.iloc[i]['pos']][tag]
-        except:
-            pos_p = 1.0
-        try:
-            shape_p = shape_probs[data_valid.iloc[i]['shape']][tag]
-        except:
-            shape_p = 1.0
-        try:
-            word_p = word_probs[data_valid.iloc[i]['word']][tag]
-        except:
-            word_p = 1.0
-        prob = pos_p * shape_p * word_p 
-        if prob > max_prob:
-            max_prob = prob
-            max_tag = tag
-    #pred_tag = max(tag_probs.iterkeys(), key=(lambda key: tag_probs[key]))
-    pred_tag = max_tag
-    pred_valid.append(pred_tag)
-    if data_valid.iloc[i]['tag'] == pred_tag:
-        count_correct += 1
-train_accuracy = 1.0*count_correct / len(data_valid)
-print "Validation Accuracy using pos, shape, word (evenly weighted): " + str(train_accuracy)
-print '-----------------------------------------------'
+    # # training prediction
+    count_correct = 0
+    for i in range(len(data_small)):
+        max_prob = 0.0
+        max_tag = ''
+        for tag in tag_list:  
+            # try, except to ignore one value when a word has not been seen before!
+            try:      
+                pos_p = pos_probs[data_small.iloc[i]['pos']][tag]
+            except:
+                pos_p = 1.0
+            try:
+                shape_p = shape_probs[data_small.iloc[i]['shape']][tag]
+            except:
+                shape_p = 1.0
+            try:
+                word_p = word_probs[data_small.iloc[i]['word']][tag]
+            except:
+                word_p = 1.0
+            prob = pos_p * shape_p * word_p 
+            if prob > max_prob:
+                max_prob = prob
+                max_tag = tag
+        pred_tag = max_tag
+        pred_train.append(pred_tag)
+        if data_small.iloc[i]['tag'] == pred_tag:
+            count_correct += 1
+    train_accuracy = 1.0*count_correct / len(data_small)
+    print "Train Accuracy using "+pos_coeff+" pos, "+shape_coeff+" shape, and "+word_coeff+" word: " + str(train_accuracy)
 
+    # validation prediction
+    count_correct = 0
+    for i in range(len(data_valid)):
+        max_prob = 0.0
+        max_tag = ''
+        for tag in tag_list:        
+            # try, except to ignore one value when a word has not been seen before!
+            try:      
+                pos_p = pos_probs[data_valid.iloc[i]['pos']][tag]
+            except:
+                pos_p = 1.0
+            try:
+                shape_p = shape_probs[data_valid.iloc[i]['shape']][tag]
+            except:
+                shape_p = 1.0
+            try:
+                word_p = word_probs[data_valid.iloc[i]['word']][tag]
+            except:
+                word_p = 1.0
+            prob = pos_p * shape_p * word_p 
+            if prob > max_prob:
+                max_prob = prob
+                max_tag = tag
+        pred_tag = max_tag
+        pred_valid.append(pred_tag)
+        if data_valid.iloc[i]['tag'] == pred_tag:
+            count_correct += 1
+    train_accuracy = 1.0*count_correct / len(data_valid)
+    print "Validation Accuracy using "+pos_coeff+" pos, "+shape_coeff+" shape, and "+word_coeff+" word: " + str(train_accuracy)
+    print '-----------------------------------------------'
+
+# all coeffs = 1, all vars are wieghted equally
+# multi_var_ner(1.0, 1.0, 1.0)
 
 # SECTION VI: TUNING 1. FIRST DO EXPLORATORY TUNING ON THE ALPHA (HALLUCINATION) PARAMETER ON INDIVIDUAL MODELS
 
 
 # SECTION VII: TUNING 2. TUNE HYPERPARAMETERS TO WEIGHT OUR INDIVIDUAL MODELS
-# intuition: Word prevides the strongest individual model (as expected), then POS, then Shape
-# So I would expect this order of weights
+# intuition: Word provides the strongest individual model (as expected), then POS, then Shape
+
+# multi_var_ner(shape_coeff, pos_coeff, word_coeff)
 
 
