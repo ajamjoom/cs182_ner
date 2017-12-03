@@ -121,10 +121,8 @@ def test_dict_probs(indicator_dict, dict_name):
         for tag, prob in indic_val.iteritems():
             sum_prob += prob
             if sum_prob > 1:
-                print "prob_sum: ", sum_prob
                 print "PROB SUM ERROR AT: "+dict_name+" for key"+indic_key
-                print "______________________"
-                break;
+        print "prob_sum: ", sum_prob
     print "done with "+dict_name
     print "__________________"
 
@@ -206,7 +204,7 @@ def multi_var_ner(shape_coeff, pos_coeff, word_coeff):
     pred_train = []
     pred_valid = []
 
-    # # training prediction
+    # training prediction
     count_correct = 0
     for i in range(len(data_small)):
         max_prob = 0.0
@@ -225,7 +223,10 @@ def multi_var_ner(shape_coeff, pos_coeff, word_coeff):
                 word_p = word_probs[data_small.iloc[i]['word']][tag]
             except:
                 word_p = 1.0
-            prob = pos_p * shape_p * word_p 
+            # prob = pos_p * shape_p * word_p 
+            # prob = (2*pos_p + shape_p + 5*word_p)/3
+            # prob = (pos_p + shape_p)/2
+            prob = 2*pos_p + shape_p + 3*word_p
             if prob > max_prob:
                 max_prob = prob
                 max_tag = tag
@@ -234,7 +235,7 @@ def multi_var_ner(shape_coeff, pos_coeff, word_coeff):
         if data_small.iloc[i]['tag'] == pred_tag:
             count_correct += 1
     train_accuracy = 1.0*count_correct / len(data_small)
-    print "Train Accuracy using "+pos_coeff+" pos, "+shape_coeff+" shape, and "+word_coeff+" word: " + str(train_accuracy)
+    print "Train Accuracy using "+str(pos_coeff)+" pos, "+str(shape_coeff)+" shape, and "+str(word_coeff)+" word: " + str(train_accuracy)
 
     # validation prediction
     count_correct = 0
@@ -255,7 +256,9 @@ def multi_var_ner(shape_coeff, pos_coeff, word_coeff):
                 word_p = word_probs[data_valid.iloc[i]['word']][tag]
             except:
                 word_p = 1.0
-            prob = pos_p * shape_p * word_p 
+            prob = 2*pos_p + shape_p + 3*word_p
+            # prob = (pos_p + shape_p)/2
+            # prob = pos_p * shape_p * word_p 
             if prob > max_prob:
                 max_prob = prob
                 max_tag = tag
@@ -264,11 +267,11 @@ def multi_var_ner(shape_coeff, pos_coeff, word_coeff):
         if data_valid.iloc[i]['tag'] == pred_tag:
             count_correct += 1
     train_accuracy = 1.0*count_correct / len(data_valid)
-    print "Validation Accuracy using "+pos_coeff+" pos, "+shape_coeff+" shape, and "+word_coeff+" word: " + str(train_accuracy)
+    print "Validation Accuracy using "+str(pos_coeff)+" pos, "+str(shape_coeff)+" shape, and "+str(word_coeff)+" word: " + str(train_accuracy)
     print '-----------------------------------------------'
 
 # all coeffs = 1, all vars are wieghted equally
-# multi_var_ner(1.0, 1.0, 1.0)
+multi_var_ner(1.0, 1.0, 1.0)
 
 # SECTION VI: TUNING 1. FIRST DO EXPLORATORY TUNING ON THE ALPHA (HALLUCINATION) PARAMETER ON INDIVIDUAL MODELS
 
