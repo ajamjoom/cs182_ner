@@ -267,10 +267,155 @@ def multi_var_ner(shape_coeff, pos_coeff, word_coeff):
     print "Validation Accuracy using "+pos_coeff+" pos, "+shape_coeff+" shape, and "+word_coeff+" word: " + str(train_accuracy)
     print '-----------------------------------------------'
 
+def combined_model(feature_list):
+    pred_train = []
+    pred_valid = []
+
+    # # training prediction
+    count_correct = 0
+    for i in range(len(data_small)):
+        #if i % 100 == 0:
+        #print(i)
+        #tag_probs = {}
+        max_prob = 0.0
+        max_tag = ''
+        for tag in tag_list:  
+            prob = 1.0
+            names = []
+            for name, probs in feature_list:
+                names.append(name)
+                # try, except to ignore one value when a word has not been seen before!
+                try:      
+                    p = probs[data_small.iloc[i][name]][tag]
+                except:
+                    p = 1.0
+                prob *= p
+            if prob > max_prob:
+                max_prob = prob
+                max_tag = tag
+        #pred_tag = max(tag_probs.iterkeys(), key=(lambda key: tag_probs[key]))
+        pred_tag = max_tag
+        pred_train.append(pred_tag)
+        if data_small.iloc[i]['tag'] == pred_tag:
+            count_correct += 1
+    train_accuracy = 1.0*count_correct / len(data_small)
+    names_str = names[0]
+    for n in names[1:]: 
+        names_str = names_str + ", "
+        names_str = names_str + n
+    print "Train Accuracy using " + '(' + names_str + ')' + ": " + str(train_accuracy)
+
+    # validation prediction
+    count_correct = 0
+    for i in range(len(data_valid)):
+        #if i % 100 == 0:
+        #    print(i)
+        #tag_probs = {}
+        max_prob = 0.0
+        max_tag = ''
+        for tag in tag_list:  
+            prob = 1.0
+            names = []
+            for name, probs in feature_list:
+                names.append(name)
+                # try, except to ignore one value when a word has not been seen before!
+                try:      
+                    p = probs[data_valid.iloc[i][name]][tag]
+                except:
+                    p = 1.0
+                prob *= p
+            if prob > max_prob:
+                max_prob = prob
+                max_tag = tag
+        #pred_tag = max(tag_probs.iterkeys(), key=(lambda key: tag_probs[key]))
+        pred_tag = max_tag
+        pred_valid.append(pred_tag)
+        if data_valid.iloc[i]['tag'] == pred_tag:
+            count_correct += 1
+    train_accuracy = 1.0*count_correct / len(data_valid)
+    names_str = names[0]
+    for n in names[1:]: 
+        names_str = names_str + ", "
+        names_str = names_str + n
+    print "Validation Accuracy using " + '(' + names_str + ')' ": " + str(train_accuracy)
+    print '-----------------------------------------------'
+
+# Below lines test combined models for test and validation accuracy
+#combined_model([('pos', pos_probs), ('shape', shape_probs), ('word', word_list)])
+#combined_model([('pos', pos_probs), ('shape', shape_probs)])
+#combined_model([('word', word_probs), ('shape', shape_probs)])
+#combined_model([('pos', pos_probs), ('word', word_probs)])
+
 # all coeffs = 1, all vars are wieghted equally
 # multi_var_ner(1.0, 1.0, 1.0)
 
 # SECTION VI: TUNING 1. FIRST DO EXPLORATORY TUNING ON THE ALPHA (HALLUCINATION) PARAMETER ON INDIVIDUAL MODELS
+
+# UNCOMMENT WHEN ALPHA TESTING
+#print
+#print '-----------------------------------------------'
+#print "Section VI: ALPHA TESTING" + " Using Part of Speech (pos) and Shape:"
+#print '-----------------------------------------------'
+
+# function to re-create initial dictionaries with different alpha values (not 1.0)
+def create_entity_dict2(indicator_list, indicator_name, indicator_dict_name, alpha):
+    print "Alpha: " + str(alpha)
+    for item in indicator_list:
+        tag_prob_dict = {}
+        for tag in tag_list:
+            count = 0
+            for i in data_small[data_small[indicator_name] == item]['tag']:
+                if i == tag:
+                    count += 1
+            tag_prob_dict.update({str(tag) : (1.0*count + alpha)/(len(data_small[data_small[indicator_name] == item]) + alpha*len(indicator_list))})
+        indicator_dict_name[item] = tag_prob_dict
+    return indicator_dict_name
+
+# how to use two previously made functions
+# create_entity_dict(word_list,'word', word_probs)
+# train_validate_model(data_small,'pos',pos_probs)
+
+# function takes in lists (as demonstrated below) so we can adjust alpha and test results
+def test_for_alpha(indicator_lists, indicator_names, indicator_dict_names, alphas):
+    tuple_list = []
+    for i in range(len(indicator_lists)):
+        dicto = create_entity_dict2(indicator_lists[i], indicator_names[i], indicator_dict_names[i], alphas[i])
+        tuple_list.append((indicator_names[i], dicto))
+    combined_model(tuple_list)
+
+# UNCOMMENT TO PERFORM ALPHA TESTING ON POS AND SHAPE
+#test_for_alpha([pos_list, shape_list], ['pos', 'shape'], [pos_probs, shape_probs], [1.0, 1.0])
+#test_for_alpha([pos_list, shape_list], ['pos', 'shape'], [pos_probs, shape_probs], [0.1, 0.1])
+#test_for_alpha([pos_list, shape_list], ['pos', 'shape'], [pos_probs, shape_probs], [1.0, 0.1])
+#test_for_alpha([pos_list, shape_list], ['pos', 'shape'], [pos_probs, shape_probs], [0.1, 1.0])
+# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [1.0, 5.0, 10.0])
+# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [1.0, 10.0, 5.0])
+# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [5.0, 1.0, 10.0])
+# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [5.0, 10.0, 1.0])
+# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [10.0, 5.0, 1.0])
+# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [10.0, 1.0, 5.0])
+
+# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.2, 0.4, 0.6])
+# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.2, 0.6, 0.4])
+# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.4, 0.2, 0.6])
+# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.4, 0.6, 0.2])
+# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.6, 0.2, 0.4])
+# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.6, 0.4, 0.2])
+
+print "TESTING FOR WORD ALPHA"
+test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.5, 0.5, 0.9])
+test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.5, 0.5, 0.5])
+test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.5, 0.5, 0.1])
+
+print "TESTING FOR SHAPE ALPHA"
+test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.5, 0.9, 0.5])
+test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.5, 0.5, 0.5])
+test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.5, 0.1, 0.5])
+
+print "TESTING FOR POS ALPHA"
+test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.9, 0.5, 0.5])
+test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.5, 0.5, 0.5])
+test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.1, 0.5, 0.5])
 
 
 # SECTION VII: TUNING 2. TUNE HYPERPARAMETERS TO WEIGHT OUR INDIVIDUAL MODELS
