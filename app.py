@@ -3,6 +3,8 @@ import sys
 import json
 import csv, codecs, cStringIO
 from datetime import datetime
+import ast
+
 # import ner_algo
 import requests
 from flask import Flask, request
