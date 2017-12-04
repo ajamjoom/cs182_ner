@@ -10,6 +10,88 @@ from flask import Flask, request
 app = Flask(__name__)
 
 
+pos_probs = {}
+shape_probs = {}
+word_probs = {}
+
+def dict_from_csv(csv_name):
+    with open(csv_name, 'rb') as csv_file:
+        init_dict = dict(csv.reader(csv_file))
+        new_dict = {}
+        for key, value in init_dict.iteritems():
+            new_dict[unicode(key, 'utf-8')] = ast.literal_eval(value)
+    return new_dict
+
+def camel(s):
+    return (s != s.lower() and s != s.upper())
+
+def local_shapes(spacy_shape):
+    if spacy_shape.islower():
+        return u'lowercase'
+    elif spacy_shape.isupper():
+        return u'uppercase'
+    elif not spacy_shape.isnumeric():
+       return u'mixedcase' 
+    elif spacy_shape[0].isupper():
+        return u'capitalized'
+    elif spacy_shape.isnumeric():
+        return u'number'
+    elif camel(spacy_shape):
+        return u'camelcase'
+    elif spacy_shape[len(spacy_shape)-1] == '.':
+        return u'ending-dot',
+    elif '-' in spacy_shape:
+        return u'contains-hyphen'
+    elif spacy_shape in string.punctuation:
+        return u'punct'
+    else:
+        return u'other'
+
+def messenger_ner(sentence):
+    # Populate the pos, word, and shape dicts from their CSV files
+    pos_probs = dict_from_csv('pos.csv')
+    shape_probs = dict_from_csv('shape.csv')
+    word_probs = dict_from_csv('word.csv')
+
+    nlp = spacy.load('en')
+    doc = nlp(sentence.decode('utf-8'))
+
+    sentence_dict = {}
+    for token in doc:
+        local_shapes(token.shape_)
+        sentence_dict[token] = (token.tag_, local_shapes(token.shape_))
+
+    # print sentence_dict
+    tagged_sentence = {}
+    for word, value in sentence_dict.iteritems():
+        word_pos, word_shape = value
+        prob = 0.0
+        max_prob = 0.0
+        max_tag = ''
+        for tag in tag_list:  
+            # try, except to ignore one value when a word has not been seen before!
+            try:      
+                pos_p = pos_probs[word_pos][tag]
+            except:
+                pos_p = 1.0
+            try:
+                shape_p = shape_probs[word_shape][tag]
+            except:
+                shape_p = 1.0
+            try:
+                word_p = word_probs[word][tag]
+            except:
+                word_p = 1.0
+            prob = pos_p * shape_p * word_p
+
+            if prob > max_prob:
+                max_prob = prob
+                max_tag = tag
+        tagged_sentence[word] = max_tag
+
+    return tagged_sentence
+
+
 @app.route('/', methods=['GET'])
 def verify():
     # when the endpoint is registered as a webhook, it must echo back
@@ -63,7 +145,7 @@ def webhook():
                             # reply to user with error if the text is not in the correct format
                             send_message(sender_id, "Thank you for improving our algorithm!")     
                         else:
-                            send_quickrep_message(sender_id, ner_algo.messenger_ner(message_text))
+                            send_quickrep_message(sender_id, messenger_ner(message_text))
                             # send_quickrep_message(sender_id, "TESTIN TESTIN TESIN")
 
                 if messaging_event.get("postback"):  # user clicked/tapped "postback" button in earlier message
