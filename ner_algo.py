@@ -341,7 +341,7 @@ def messenger_ner(sentence):
         local_shapes(token.shape_)
         sentence_dict[token] = (token.tag_, local_shapes(token.shape_))
 
-    print sentence_dict
+    # print sentence_dict
     tagged_sentence = {}
     for word, value in sentence_dict.iteritems():
         word_pos, word_shape = value

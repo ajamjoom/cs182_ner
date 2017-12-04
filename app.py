@@ -9,6 +9,9 @@ from flask import Flask, request
 
 app = Flask(__name__)
 
+# Test
+# print ner_algo.messenger_ner("This is a test")
+
 
 @app.route('/', methods=['GET'])
 def verify():
@@ -51,7 +54,7 @@ def webhook():
                             send_message(sender_id, "Shoot, sorry about that. Would be great if you send us the correct tagged tokens in the format we used. Preface your text with the phrase 'NER: '. Ex. NER: (Ahmed, name)...")
                         
                         elif quick_payload == "yes": # Correct parsing -> add it to training data
-                            send_message(sen`der_id, "Perfect, thank you for letting us know!")
+                            send_message(sender_id, "Perfect, thank you for letting us know!")
 
                         elif quick_payload == "not sure": # Don't add NER to training data
                             send_message(sender_id, "Alright thanks!")
