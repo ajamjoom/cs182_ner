@@ -3,14 +3,10 @@ import sys
 import json
 from datetime import datetime
 import ner_algo
-
 import requests
 from flask import Flask, request
 
 app = Flask(__name__)
-
-# Test
-# print ner_algo.messenger_ner("This is a test")
 
 
 @app.route('/', methods=['GET'])
@@ -54,7 +50,7 @@ def webhook():
                             send_message(sender_id, "Shoot, sorry about that. Would be great if you send us the correct tagged tokens in the format we used. Preface your text with the phrase 'NER: '. Ex. NER: (Ahmed, name)...")
                         
                         elif quick_payload == "yes": # Correct parsing -> add it to training data
-                            send_message(sender_id, "Perfect, thank you for letting us know!")
+                            send_message(sen`der_id, "Perfect, thank you for letting us know!")
 
                         elif quick_payload == "not sure": # Don't add NER to training data
                             send_message(sender_id, "Alright thanks!")
@@ -64,9 +60,10 @@ def webhook():
                         
                         if msg_start == 'NER': # parse user text and add it to training data 
                             # reply to user with error if the text is not in the correct format
-                            send_message(sender_id, ner_algo.messenger_ner(message_text))     
+                            send_message(sender_id, "Thank you for improving our algorithm!")     
                         else:
-                            send_quickrep_message(sender_id, "Tokenized NER text should be here")
+                            # send_quickrep_message(sender_id, ner_algo.messenger_ner(message_text))
+                            send_quickrep_message(sender_id, "TESTIN TESTIN TESIN")
 
                 if messaging_event.get("postback"):  # user clicked/tapped "postback" button in earlier message
                     pass
