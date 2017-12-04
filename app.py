@@ -2,7 +2,7 @@ import os
 import sys
 import json
 from datetime import datetime
-import ner_algo
+# import ner_algo
 import requests
 from flask import Flask, request
 
