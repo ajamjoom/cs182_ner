@@ -2,7 +2,7 @@ import os
 import sys
 import json
 from datetime import datetime
-# import ner_algo
+import ner_algo
 import requests
 from flask import Flask, request
 
@@ -62,8 +62,8 @@ def webhook():
                             # reply to user with error if the text is not in the correct format
                             send_message(sender_id, "Thank you for improving our algorithm!")     
                         else:
-                            # send_quickrep_message(sender_id, ner_algo.messenger_ner(message_text))
-                            send_quickrep_message(sender_id, "TESTIN TESTIN TESIN")
+                            send_quickrep_message(sender_id, ner_algo.messenger_ner(message_text))
+                            # send_quickrep_message(sender_id, "TESTIN TESTIN TESIN")
 
                 if messaging_event.get("postback"):  # user clicked/tapped "postback" button in earlier message
                     pass
