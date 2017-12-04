@@ -4,6 +4,10 @@ import json
 import csv, codecs, cStringIO
 from datetime import datetime
 import ast
+import spacy
+import string
+
+
 
 # import ner_algo
 import requests
