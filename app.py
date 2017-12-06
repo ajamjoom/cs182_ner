@@ -7,6 +7,7 @@ import string
 # NEW IS BELOW
 import numpy as np
 import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.linear_model import Perceptron
 from sklearn.model_selection import train_test_split
