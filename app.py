@@ -161,6 +161,10 @@ def webhook():
                             tokens = nltk.word_tokenize("Dive into NLTK: Part-of-speech tagging POS Tagger")
                             log("TOKENS")
                             log(tokens)
+                            pos_tags = nltk.pos_tag(tokens)
+                            log("POS_TAGS")
+                            log(tokpos_tagsens)
+                            # print pos_tags
                             # pos_tags = nltk.pos_tag(tokens)
                             # # print pos_tags
                             # x,y = pos_tags[0]
