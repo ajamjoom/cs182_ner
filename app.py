@@ -150,8 +150,14 @@ def webhook():
                             # reply to user with error if the text is not in the correct format
                             send_message(sender_id, "Thank you for improving our algorithm!")     
                         else:
-                            send_quickrep_message(sender_id, messenger_ner(message_text))
+                            # send_quickrep_message(sender_id, messenger_ner(message_text))
                             # send_quickrep_message(sender_id, "TESTIN TESTIN TESIN")
+                            tokens = nltk.word_tokenize("Dive into NLTK: Part-of-speech tagging POS Tagger")
+                            pos_tags = nltk.pos_tag(tokens)
+                            # # print pos_tags
+                            x,y = pos_tags[0]
+                            # send_quickrep_message(sender_id, messenger_ner(message_text))
+                            send_quickrep_message(sender_id, y)
 
                 if messaging_event.get("postback"):  # user clicked/tapped "postback" button in earlier message
                     pass
