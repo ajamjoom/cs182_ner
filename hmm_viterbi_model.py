@@ -53,7 +53,6 @@ print("F1 Score: " + str(f1_score(data_small['tag'], pred_b, labels=tag_list, av
 print
 
 
-
 # TRANSITION PROBABILITIES, from tag to tag
 
 transition_probs = {}
