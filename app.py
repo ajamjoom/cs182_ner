@@ -165,15 +165,6 @@ def webhook():
                             sentence_data = []
                             for i in xrange(len(words)):
                                 sentence_data.append([words[i], pos_tags[i], shapes[i]])
-                                
-                            log("TOKENS")
-                            log(words)
-                            log("POS_TAGS")
-                            log(pos_tags)
-                            log("TOKEN_SHAPES")
-                            log(shapes)
-                            log("messenger_ner(sentence_data)")
-                            log(messenger_ner(sentence_data))
                             
                             send_quickrep_message(sender_id, messenger_ner(sentence_data))
 
