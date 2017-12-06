@@ -140,7 +140,7 @@ def webhook():
 
                                 return tagged_sentence
 
-                            words = nltk.word_tokenize("Dive into NLTK: Part-of-speech tagging POS Tagger")
+                            words = nltk.word_tokenize(message_text)
                             
                             pos_tags_tuple = nltk.pos_tag(words)
 
@@ -150,7 +150,7 @@ def webhook():
                                 pos_tags.append(tag)
                             
                             shapes = []
-                            for token in tokens:
+                            for token in words:
                                 token_shape = shape(token)
                                 shapes.append(token_shape)
 
