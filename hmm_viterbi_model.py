@@ -42,6 +42,11 @@ for tag in tag_list:
     prob = 1.0*len(data_small[data_small['tag'] == tag]) / len(data_small)
     initial_tag_probs[tag] = prob
 
+# print "initial_tag_probs: "
+# print 
+# print initial_tag_probs
+# print 
+
 pred_b = []
 for i in range(len(data_small)):
     pred_b.append('O')
@@ -63,6 +68,11 @@ for tag1 in tag_list:
         to_tag2 = data_tag1[data_tag1['prev-iob'] == tag2]
         within_tag[tag2] = len(to_tag2)*1.0/len(data_tag1)
     transition_probs[tag1] = within_tag
+
+# print "transition_probs: "
+# print 
+# print transition_probs
+# print 
 
 # remake with a very small amount of hallucination
 # still need to tune this, see what we want to do
@@ -206,6 +216,10 @@ def features_from_tag(test_data):
 
 f, final_word_list, final_pos_list, final_shape_list = features_from_tag(data_valid)
 
+# print "The value of f: "
+# print 
+# print f
+# print 
 
 # FUNCTION THAT USES VITERBI ALGORITHM TO PREDICT 
 
@@ -231,8 +245,9 @@ def viterbi_prediction():
                 
                         # transition model
                         prev_tag = row['prev-iob']
+                        print "prev_tag: ", prev_tag
                         transition_prob = transition_probs[tag][prev_tag]
-                    
+                        print "transition_prob: ", transition_prob
                         prob = emission * transition_prob
                     
                         if prob > max_prob:
