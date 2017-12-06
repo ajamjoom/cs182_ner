@@ -401,9 +401,9 @@ else:
 # u'lowercase', 
 # u'camelcase', 
 # u'uppercase', 
-# u'capitalized', 
+# u'capitalized',
 # u'number', 
-# u'abbreviation', 
+# u'abbreviation', ######
 # u'punct', 
 # u'other', 
 # u'ending-dot', 

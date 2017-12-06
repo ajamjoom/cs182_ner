@@ -129,27 +129,27 @@ def verify():
     #     else:
     #         return u'other'
 
-    tokens = nltk.word_tokenize("Dive into NLTK: Part-of-speech tagging POS Tagger")
+    # tokens = nltk.word_tokenize("Dive into NLTK: Part-of-speech tagging POS Tagger")
                             
-    pos_tags = nltk.pos_tag(tokens)
+    # pos_tags = nltk.pos_tag(tokens)
     
-    shapes = []
-    for token in tokens:
-        token_shape = shape(token)
-        shapes.append((token, token_shape))
+    # shapes = []
+    # for token in tokens:
+    #     token_shape = shape(token)
+    #     shapes.append((token, token_shape))
 
-    log("TOKENS")
-    log(tokens)
-    log("POS_TAGS")
-    log(pos_tags)
-    log("TOKEN_SHAPES")
-    log(shapes)
-    print ("TOKENS")
-    print (tokens)
-    print ("POS_TAGS")
-    print (pos_tags)
-    print ("TOKEN_SHAPES")
-    print (shapes)
+    # log("TOKENS")
+    # log(tokens)
+    # log("POS_TAGS")
+    # log(pos_tags)
+    # log("TOKEN_SHAPES")
+    # log(shapes)
+    # print ("TOKENS")
+    # print (tokens)
+    # print ("POS_TAGS")
+    # print (pos_tags)
+    # print ("TOKEN_SHAPES")
+    # print (shapes)
     return "CS182 Final Project | NER with HMM and fb messenger user output | by Abdulrahman Jamjoom and Josh Kupersmith", 200
 
 
