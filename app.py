@@ -7,7 +7,6 @@ import string
 # NEW IS BELOW
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.linear_model import Perceptron
 from sklearn.model_selection import train_test_split
@@ -23,7 +22,7 @@ import re
 import nltk
 from flask import Flask, render_template, request
 from collections import Counter
-import f_dict
+# import f_dict
 
 app = Flask(__name__)
 
