@@ -6,7 +6,13 @@ CS182 Final Project- building an NER Model using Hidden Markov Models (Josh Kupp
 
 How to run the code from your terminal:
 
-File : ner_algo.py
+File = ner_algo.py
+  
+  1. Run HMM Viterbi Model (Fastest and most accurate tagger)
+  
+    python hmm_viterbi_model.py
+    
+File = ner_algo.py
 
 1. NER Baseline Accuracy:
     
@@ -29,6 +35,8 @@ File : ner_algo.py
     python ner_algo.py alpha pos_alpha shape_alpha word_alpha
   
   Note: alpha is a float.
+  
+  
   
 
 
