@@ -381,9 +381,7 @@ if len(sys.argv) > 1: # if user gave some input
         elif sys.argv[2] == "pos_word_shape":
             combined_model([('pos', pos_probs), ('shape', shape_probs), ('word', word_probs)])
     elif sys.argv[1] == "alpha":
-        test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4])])
-    elif sys.argv[1] == "best_combo":
-        combined_model([('pos', pos_probs), ('shape', shape_probs), ('word', word_probs)])
+        test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4])])
 else:
     print "You have entered an incorrect command. Please check the code documentation on how to run the code."
 
