@@ -10,9 +10,5 @@ wsgiref==0.1.2
 nltk
 numpy==1.6.2
 pandas==0.8.1
-sklearn.ensemble
-sklearn.neighbors
-sklearn.metrics
-sklearn.model_selection
-sklearn.linear_model
-sklearn.feature_extraction
+nscipy==0.11.0
+nscikit-learn==0.13.1
