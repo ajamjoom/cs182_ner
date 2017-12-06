@@ -7,13 +7,13 @@ import string
 # NEW IS BELOW
 import numpy as np
 import pandas as pd
-from scikit-learn.ensemble import RandomForestClassifier
-from scikit-learn.feature_extraction import DictVectorizer
-from scikit-learn.linear_model import Perceptron
-from scikit-learn.metrics import precision_recall_fscore_support, f1_score
-from scikit-learn.metrics import accuracy_score
-from scikit-learn.ensemble import RandomForestClassifier
-from scikit-learn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_extraction import DictVectorizer
+from sklearn.linear_model import Perceptron
+from sklearn.metrics import precision_recall_fscore_support, f1_score
+from sklearn.metrics import accuracy_score
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
 # NEW IS ABOVE
 import os
 import requests
