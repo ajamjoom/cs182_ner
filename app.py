@@ -96,7 +96,6 @@ app = Flask(__name__)
 
 #     return tagged_sentence
 
-
 @app.route('/', methods=['GET'])
 def verify():
     # when the endpoint is registered as a webhook, it must echo back
@@ -106,13 +105,52 @@ def verify():
             return "Verification token mismatch", 403
         return request.args["hub.challenge"], 200
 
+    # Doesn't account for type = abbreviation
+    # def shape(word):
+    #     if re.match('[0-9]+(\.[0-9]*)?|[0-9]*\.[0-9]+$', word, re.UNICODE):
+    #         return u'number'
+    #     elif '.' == word:
+    #         return u'ending-dot'
+    #     elif re.match('\W+$', word, re.UNICODE):
+    #         return u'punct'
+    #     elif re.match('\w+$', word, re.UNICODE):
+    #         if '-' in word:
+    #             return u'contains-hyphen'
+    #         elif word.isupper():
+    #             return u'uppercase'
+    #         elif word.islower():
+    #             return u'lowercase'
+    #         elif word[0].isupper():
+    #             return u'capitalized'
+    #         elif word[0].islower():
+    #             return u'camelcase'
+    #         else:
+    #             return u'mixedcase'
+    #     else:
+    #         return u'other'
+
     tokens = nltk.word_tokenize("Dive into NLTK: Part-of-speech tagging POS Tagger")
+                            
     pos_tags = nltk.pos_tag(tokens)
-    # # print pos_tags
-    x,y = pos_tags[0]
-    # send_quickrep_message(sender_id, messenger_ner(message_text))
-    return y
-    #return "CS182 Final Project | NER with HMM and fb messenger user output | by Abdulrahman Jamjoom and Josh Kupersmith", 200
+    
+    shapes = []
+    for token in tokens:
+        token_shape = shape(token)
+        shapes.append((token, token_shape))
+
+    log("TOKENS")
+    log(tokens)
+    log("POS_TAGS")
+    log(pos_tags)
+    log("TOKEN_SHAPES")
+    log(shapes)
+    print ("TOKENS")
+    print (tokens)
+    print ("POS_TAGS")
+    print (pos_tags)
+    print ("TOKEN_SHAPES")
+    print (shapes)
+    return "CS182 Final Project | NER with HMM and fb messenger user output | by Abdulrahman Jamjoom and Josh Kupersmith", 200
 
 
 @app.route('/', methods=['POST'])
@@ -156,12 +194,46 @@ def webhook():
                             # reply to user with error if the text is not in the correct format
                             send_message(sender_id, "Thank you for improving our algorithm!")     
                         else:
+                            # Doesn't account for type = abbreviation
+                            def shape(word):
+                                if re.match('[0-9]+(\.[0-9]*)?|[0-9]*\.[0-9]+$', word, re.UNICODE):
+                                    return u'number'
+                                elif '.' == word:
+                                    return u'ending-dot'
+                                elif re.match('\W+$', word, re.UNICODE):
+                                    return u'punct'
+                                elif re.match('\w+$', word, re.UNICODE):
+                                    if '-' in word:
+                                        return u'contains-hyphen'
+                                    elif word.isupper():
+                                        return u'uppercase'
+                                    elif word.islower():
+                                        return u'lowercase'
+                                    elif word[0].isupper():
+                                        return u'capitalized'
+                                    elif word[0].islower():
+                                        return u'camelcase'
+                                    else:
+                                        return u'mixedcase'
+                                else:
+                                    return u'other'
+            
                             tokens = nltk.word_tokenize("Dive into NLTK: Part-of-speech tagging POS Tagger")
+                            
+                            pos_tags = nltk.pos_tag(tokens)
+                            
+                            shapes = []
+                            for token in tokens:
+                                token_shape = shape(token)
+                                shapes.append((token, token_shape))
+
                             log("TOKENS")
                             log(tokens)
-                            pos_tags = nltk.pos_tag(tokens)
                             log("POS_TAGS")
                             log(pos_tags)
+                            log("TOKEN_SHAPES")
+                            log(shapes)
+
                             send_quickrep_message(sender_id, "tokens[0]")
 
                 if messaging_event.get("postback"):  # user clicked/tapped "postback" button in earlier message
