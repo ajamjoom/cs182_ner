@@ -170,7 +170,7 @@ def webhook():
 
                             initial_tag_probs = {}
                             transition_probs = {}
-                            f = f_dict.f
+                            # f = f_dict.f
 
                             def dict_from_csv(csv_name):
                                 print "on csv_file_name: ", csv_name
