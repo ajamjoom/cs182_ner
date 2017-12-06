@@ -107,11 +107,11 @@ def webhook():
                                 else:
                                     return u'other'
 
-                            def messenger_ner(sentence_lst):
+                            def messenger_ner(sentence_data):
    
                                 # print sentence_dict
                                 tagged_sentence = ''
-                                for token_data in sentence_dict:
+                                for token_data in sentence_data:
                                     
                                     word, word_pos, word_shape = token_data[0], token_data[1], token_data[2]
                                     prob = 0.0
@@ -156,7 +156,7 @@ def webhook():
 
                             sentence_data = []
                             for i in xrange(len(words)):
-                                sentence_dict.append([words[i], pos[i], shapes[i]])
+                                sentence_data.append([words[i], pos[i], shapes[i]])
                                 
                             log("TOKENS")
                             log(tokens)
