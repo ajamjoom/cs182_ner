@@ -106,7 +106,13 @@ def verify():
             return "Verification token mismatch", 403
         return request.args["hub.challenge"], 200
 
-    return "CS182 Final Project | NER with HMM and fb messenger user output | by Abdulrahman Jamjoom and Josh Kupersmith", 200
+    tokens = nltk.word_tokenize("Dive into NLTK: Part-of-speech tagging POS Tagger")
+    pos_tags = nltk.pos_tag(tokens)
+    # # print pos_tags
+    x,y = pos_tags[0]
+    # send_quickrep_message(sender_id, messenger_ner(message_text))
+    return y
+    #return "CS182 Final Project | NER with HMM and fb messenger user output | by Abdulrahman Jamjoom and Josh Kupersmith", 200
 
 
 @app.route('/', methods=['POST'])
@@ -153,11 +159,11 @@ def webhook():
                             # send_quickrep_message(sender_id, messenger_ner(message_text))
                             # send_quickrep_message(sender_id, "TESTIN TESTIN TESIN")
                             tokens = nltk.word_tokenize("Dive into NLTK: Part-of-speech tagging POS Tagger")
-                            pos_tags = nltk.pos_tag(tokens)
+                            # pos_tags = nltk.pos_tag(tokens)
                             # # print pos_tags
-                            x,y = pos_tags[0]
+                            # x,y = pos_tags[0]
                             # send_quickrep_message(sender_id, messenger_ner(message_text))
-                            send_quickrep_message(sender_id, y)
+                            send_quickrep_message(sender_id, tokens[0])
 
                 if messaging_event.get("postback"):  # user clicked/tapped "postback" button in earlier message
                     pass
