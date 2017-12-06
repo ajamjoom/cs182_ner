@@ -7,14 +7,11 @@ import ast
 import spacy
 import string
 
-
-
 # import ner_algo
 import requests
 from flask import Flask, request
 
 app = Flask(__name__)
-
 
 pos_probs = {}
 shape_probs = {}

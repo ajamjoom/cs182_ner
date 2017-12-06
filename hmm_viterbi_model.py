@@ -208,11 +208,6 @@ def features_from_tag(test_data):
 f, final_word_list, final_pos_list, final_shape_list = features_from_tag(data_valid)
 
 
-
-
-
-
-
 # FUNCTION THAT USES VITERBI ALGORITHM TO PREDICT 
 
 def viterbi_prediction():
@@ -320,5 +315,4 @@ def viterbi_prediction():
 
 
 viterbi_prediction()
-
 

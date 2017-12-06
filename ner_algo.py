@@ -9,10 +9,17 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import precision_recall_fscore_support, f1_score
 import spacy
 import string
+import time
+import collections
+import sys
+import warnings
 
+# ignores the f1 warning
+warnings.filterwarnings('ignore')
 
-
-#### SECTION I: Initializing and cleaning the dataset
+# ------------------------------------------------
+# SECTION I: Initializing and cleaning the dataset
+# ------------------------------------------------
 
 # Fetching data from ner.csv
 data = pd.read_csv("ner.csv", encoding = "ISO-8859-1", error_bad_lines=False)
@@ -20,14 +27,9 @@ data.head()
 
 # Drop null rows and check if any null values remaining
 data.dropna(inplace=True)
-# print
-# print("Remaining Nulls: " + str(data[data.isnull().any(axis=1)].size))
 
 # Fetch a smaller sample of data for testing (takes less computational time). 
 # Change this for production
-
-# arbirtrary size for now, just need code to run somwhat quickly
-# randomize these? yuh
 data_small = data[:20000]
 data_valid = data[20001:30000]
 
@@ -41,8 +43,6 @@ x_small = data_small[preds]
 # Split data into train and test data
 x_train, x_test, y_train, y_test = train_test_split(x_small, y_small, test_size=0.2, random_state=0)
 
-## HARDCODE: Start ##
-
 # Training data variables. All possible options of each indicator variable
 pos_list = list(set(x_train['pos']))      # Word's part of speech options
 shape_list = list(set(x_train['shape']))  # Shape of each word
@@ -51,18 +51,17 @@ word_list = list(set(data_small['word'])) # All the words in the small data set 
 # Different name entity tags available
 tag_list = list(set(y_train.values)) 
 
-## HARDCODE: End ##    
+end = time.time()
 
-
-
-#### SECTION II: [ONLY RUN THIS SECTION ONCE] PreProcessing the Shape and Part-of-Speech dictionaries
+# ------------------------------------------------------------------
+# SECTION II: PreProcessing the Shape and Part-of-Speech dictionaries
+# [ONLY RUN THIS SECTION ONCE]
+# -------------------------------------------------------------------
 
 # Init empty dictionaries to use for making predictions. Dict of Dicts
 shape_probs = {} # {Key= shape : vale={key= entity-tage: value= probability}}
 pos_probs = {}   # {Key= part-of-speech : vale={key= entity-tage: value= probability}}
 word_probs = {}  # {Key= unique-word : vale={key= entity-tage: value= probability}}
-
-alpha = 1.0
 
 # Upload dictionary to specified csv file
 # You need to create an empty csv file first with the correct name (name = indicator name in the original data file. Ex. shape.csv)
@@ -74,11 +73,11 @@ def csv_from_dict(csv_name, dict_name):
     with open(csv_name, 'wb') as csv_file:
         writer = csv.writer(csv_file)
         for key, value in dict_name.items():
-           # writer.writerow([key.encode('utf-8').strip(), value]) # This works for all dicts
-           writer.writerow([key, value]) # This doesn't work for the words dictionary
+            writer.writerow([key.encode('utf-8').strip(), value]) # This works for all dicts
+            #writer.writerow([key, value]) # This doesn't work for the words dictionary
 
 # Creates a dict of dicts as follows -> {Key= indicator_variable : vale={key= entity-tage: value= probability}}
-def create_entity_dict(indicator_list, indicator_name, indicator_dict_name):
+def create_entity_dict(indicator_list, indicator_name, indicator_dict_name, alpha):
     for item in indicator_list:
         tag_prob_dict = {}
         for tag in tag_list:
@@ -90,18 +89,20 @@ def create_entity_dict(indicator_list, indicator_name, indicator_dict_name):
         indicator_dict_name[item] = tag_prob_dict
     csv_from_dict(indicator_name+'.csv', indicator_dict_name)
 
-# Populate the shape dictionary from the small training data set
-# create_entity_dict(shape_list,'shape', shape_probs) # Uncomment to recreate CSV file
+# Uncomment the lines below to recreate the CSV indicator prob files (AKA do not uncomment)
+
+# # Populate the shape dictionary from the small training data set
+# create_entity_dict(shape_list,'shape', shape_probs, 2.0) # Uncomment to recreate CSV file
     
-# Populate the part-of-speech dictionary from the small training data set
-# create_entity_dict(pos_list,'pos', pos_probs) # Uncomment to recreate CSV file
+# # Populate the part-of-speech dictionary from the small training data set
+# create_entity_dict(pos_list,'pos', pos_probs, 2.0) # Uncomment to recreate CSV file
 
-# Populate the words dictionary from the small training data set
-# create_entity_dict(word_list,'word', word_probs) # Uncomment to recreate CSV file
+# # Populate the words dictionary from the small training data set
+# create_entity_dict(word_list,'word', word_probs, 0.01) # Uncomment to recreate CSV file
 
-
-
-#### SECTION III: Create Dicts from CSV files
+# ----------------------------------------------------
+# SECTION III: Pull the Indicator Dicts from CSV files
+# ----------------------------------------------------
 
 def dict_from_csv(csv_name):
     with open(csv_name, 'rb') as csv_file:
@@ -116,7 +117,7 @@ pos_probs = dict_from_csv('pos.csv')
 shape_probs = dict_from_csv('shape.csv')
 word_probs = dict_from_csv('word.csv')
 
-# Check if the dictionaries have correct probabilities
+# Function that checked if the CSV files have the correct probabilities (for testing)
 def test_dict_probs(indicator_dict, dict_name):    
     for indic_key, indic_val in indicator_dict.iteritems():
         sum_prob = 0.0
@@ -128,26 +129,22 @@ def test_dict_probs(indicator_dict, dict_name):
     print "done with "+dict_name
     print "__________________"
 
-# Uncomment this to run individual tests
-# test_dict_probs(pos_probs, "pos")
-# test_dict_probs(shape_probs, "shape")
-# test_dict_probs(word_probs, "word")
 
-
-
-#### SECTION IV: Single Indicator Variable Prediction Algorithm
+# ----------------------------------------------------------
+# SECTION IV: Single Indicator Variable Prediction Algorithm
+# ----------------------------------------------------------
 
 # Baseline Accuracy
-# num_O = len(data[data['tag'] == 'O'])
-# percent = 1.0*num_O/len(data)
-# print '-----------------------------------------------'
-# print "Baseline accuracy for all 'O' predictor: " + "%.4f" % percent
-# print '-----------------------------------------------'
+def baseline(): 
+    num_O = len(data[data['tag'] == 'O'])
+    percent = 1.0*num_O/len(data)
+    print '-----------------------------------------------'
+    print "Baseline accuracy for all 'O' predictor: " + "%.4f" % percent
+    print '-----------------------------------------------'
 
 # Generic function that takes in a single predictive indicator and trains/validates the modal
 def train_validate_model(data_set, indicator_name, indicator_dict_name):
-    # training and validation prediction
-    
+    # training prediction
     pred_train = []
     pred_valid = []
 
@@ -165,7 +162,8 @@ def train_validate_model(data_set, indicator_name, indicator_dict_name):
         if data_set.iloc[i]['tag'] == pred_tag:
             count_correct += 1
     train_accuracy = 1.0*count_correct / data_set_len
-    print "Train Accuracy using " + indicator_name + ': ' + str(train_accuracy)
+    print '------------- Single Indicator --------------'
+    print "     Training F1-Score using " + indicator_name + ': ' +  str(f1_score(data_set['tag'], pred_train, labels=tag_list, average="weighted"))
 
     # validation prediction
     count_correct = 0
@@ -181,27 +179,20 @@ def train_validate_model(data_set, indicator_name, indicator_dict_name):
         if data_valid.iloc[i]['tag'] == pred_tag:
             count_correct += 1
     valid_accuracy = 1.0*count_correct / data_valid_len
-    print "Validation Accuracy using " + indicator_name + ': ' + str(valid_accuracy)
+    print "     Validation F1-Score using " + indicator_name + ': ' +  str(f1_score(data_valid['tag'], pred_valid, labels=tag_list, average="weighted"))
+    print "     Validation Accuracy using " + indicator_name + ': ' + str(valid_accuracy)
+    print '-----------------------------------------------'
 
-# # Make predictions based off of "shape"
-# train_validate_model(data_small,'shape',shape_probs)
-# print '-----------------------------------------------'
-
-# Make predictions based off of "words"
-# train_validate_model(data_small,'word',word_probs)
-# print '-----------------------------------------------'
-
-# # Make predictions based off of "part-of-speech"
-# train_validate_model(data_small,'pos',pos_probs)
-# print '-----------------------------------------------'
-
-
-#### SECTION V: Generic Multiple Indicator Variables's Prediction Algorithm
+# --------------------------------------------------------------
+# SECTION V: Generic Multi Indicator Entity Prediction Algorithm
+# --------------------------------------------------------------
 
 # then we can incorporate multiple features in the algorithm by multiply probabilities and taking a max
 # or adding log probabilities. This is more complicated, but will evertually be the basis of the final model. 
 
-def multi_var_ner(shape_coeff, pos_coeff, word_coeff):
+# feature_list is a list of tuples of name and probs for the indicators you want to combine in the model
+# i.e. [('pos', pos_probs), ('shape', shape_probs), ('word', word_list)]
+def combined_model(feature_list):
 
     pred_train = []
     pred_valid = []
@@ -209,92 +200,205 @@ def multi_var_ner(shape_coeff, pos_coeff, word_coeff):
     # training prediction
     count_correct = 0
     for i in range(len(data_small)):
-        prob = 0.0
         max_prob = 0.0
         max_tag = ''
         for tag in tag_list:  
-            # try, except to ignore one value when a word has not been seen before!
-            try:      
-                pos_p = pos_probs[data_small.iloc[i]['pos']][tag]
-            except:
-                pos_p = 1.0
-            try:
-                shape_p = shape_probs[data_small.iloc[i]['shape']][tag]
-            except:
-                shape_p = 1.0
-            try:
-                word_p = word_probs[data_small.iloc[i]['word']][tag]
-            except:
-                word_p = 1.0
-            
-            if shape_coeff == pos_coeff == word_coeff == -1.0:
-                prob = pos_p * shape_p * word_p
-            else:
-                prob = (pos_coeff*pos_p) + (shape_coeff*shape_p) + (word_coeff*word_p)
-
+            prob = 1.0
+            names = []
+            for name, probs in feature_list:
+                names.append(name)
+                # try, except to ignore one value when a word has not been seen before!
+                try:      
+                    p = probs[data_small.iloc[i][name]][tag]
+                except:
+                    # p = total_tags_prob[tag] # performs worse that 1.0 (WHY?)
+                    p = 1.0
+                prob *= p
             if prob > max_prob:
                 max_prob = prob
                 max_tag = tag
+        prob = 0.0
         pred_tag = max_tag
         pred_train.append(pred_tag)
         if data_small.iloc[i]['tag'] == pred_tag:
             count_correct += 1
     train_accuracy = 1.0*count_correct / len(data_small)
-    print "Train Accuracy using "+str(pos_coeff)+" pos, "+str(shape_coeff)+" shape, and "+str(word_coeff)+" word: " + str(train_accuracy)
+    names_str = names[0]
+    for n in names[1:]: 
+        names_str = names_str + ", "
+        names_str = names_str + n
+    print '------------- Combo Algorithm --------------'
+    print "     Train F1-Score using " + '(' + names_str + ')' ": " +  str(f1_score(data_small['tag'], pred_train, labels=tag_list, average="weighted"))
 
     # validation prediction
     count_correct = 0
     for i in range(len(data_valid)):
-        prob = 0.0
         max_prob = 0.0
         max_tag = ''
-        for tag in tag_list:        
-            #try, except to ignore one value when a word has not been seen before!
-            try:      
-                pos_p = pos_probs[data_valid.iloc[i]['pos']][tag]
-            except:
-                pos_p = 1.0
-            try:
-                shape_p = shape_probs[data_valid.iloc[i]['shape']][tag]
-            except:
-                shape_p = 1.0
-            try:
-                word_p = word_probs[data_valid.iloc[i]['word']][tag]
-            except:
-                word_p = 1.0
-            
-            if shape_coeff == pos_coeff == word_coeff == -1.0:
-                prob = pos_p * shape_p * word_p
-            else:
-                prob = (pos_coeff*pos_p) + (shape_coeff*shape_p) + (word_coeff*word_p) 
-            
+        for tag in tag_list:  
+            prob = 1.0
+            names = []
+            for name, probs in feature_list:
+                names.append(name)
+                # try, except to ignore one value when a word has not been seen before!
+                try:      
+                    p = probs[data_valid.iloc[i][name]][tag]
+                except:
+                    # p = total_tags_prob[tag] # performs worse that 1.0 (WHY?)
+                    p = 1.0
+                prob *= p
             if prob > max_prob:
                 max_prob = prob
                 max_tag = tag
+        prob = 0.0
         pred_tag = max_tag
         pred_valid.append(pred_tag)
         if data_valid.iloc[i]['tag'] == pred_tag:
             count_correct += 1
     train_accuracy = 1.0*count_correct / len(data_valid)
-    print "Validation Accuracy using "+str(pos_coeff)+" pos, "+str(shape_coeff)+" shape, and "+str(word_coeff)+" word: " + str(train_accuracy)
-    print '-----------------------------------------------'
+    names_str = names[0]
+    for n in names[1:]: 
+        names_str = names_str + ", "
+        names_str = names_str + n
+    print "     Validation F1-Score using " + '(' + names_str + ')' ": " +  str(f1_score(data_valid['tag'], pred_valid, labels=tag_list, average="weighted"))
+    print "     Validation Accuracy using " + '(' + names_str + ')' ": " + str(train_accuracy)
+    print '--------------------------------------------'
 
-# SECTION VII: TUNING 2. TUNE HYPERPARAMETERS TO WEIGHT OUR INDIVIDUAL MODELS
-# intuition: Word provides the strongest individual model (as expected), then POS, then Shape
+# -------------------------------------------------
+# SECTION VI: Tuning Alpha(HALLUCINATION) Parameter 
+# -------------------------------------------------
 
-# print "BaseCase - Virtbre Multiplication"
-# multi_var_ner(-1.0,-1.0,-1.0)
+# function to re-create initial dictionaries with different alpha values (not 1.0)
+def create_entity_dict2(indicator_list, indicator_name, indicator_dict_name, alpha):
+    print '--------------- Alpha Tuning ---------------'
+    print "     Alpha: " + str(alpha)
+    for item in indicator_list:
+        tag_prob_dict = {}
+        for tag in tag_list:
+            count = 0
+            for i in data_small[data_small[indicator_name] == item]['tag']:
+                if i == tag:
+                    count += 1
+            tag_prob_dict.update({str(tag) : (1.0*count + alpha)/(len(data_small[data_small[indicator_name] == item]) + alpha*len(indicator_list))})
+        indicator_dict_name[item] = tag_prob_dict
+    return indicator_dict_name
 
-# multi_var_ner(0,0,1)
+# function takes in lists (as demonstrated below) so we can adjust alpha and test results
+def test_for_alpha(indicator_lists, indicator_names, indicator_dict_names, alphas):
+    tuple_list = []
+    for i in range(len(indicator_lists)):
+        dicto = create_entity_dict2(indicator_lists[i], indicator_names[i], indicator_dict_names[i], alphas[i])
+        tuple_list.append((indicator_names[i], dicto))
+    combined_model(tuple_list)
 
-# x = 1
-# for i in range(1,4):
-#     for j in range(1,4):
-#         for k in range(1,4):
-#             multi_var_ner(i,j,k)
+# --------------------------------------------------
+# SECTION VII: NER for Facebook Messenger 
+# --------------------------------------------------
 
+# def camel(s):
+#     return (s != s.lower() and s != s.upper())
 
-# SECTION VIII: NER for Facebook Messenger
+# def local_shapes(spacy_shape):
+#     if spacy_shape.islower():
+#         return u'lowercase'
+#     elif spacy_shape.isupper():
+#         return u'uppercase'
+#     elif not spacy_shape.isnumeric():
+#        return u'mixedcase' 
+#     elif spacy_shape[0].isupper():
+#         return u'capitalized'
+#     elif spacy_shape.isnumeric():
+#         return u'number'
+#     elif camel(spacy_shape):
+#         return u'camelcase'
+#     elif spacy_shape[len(spacy_shape)-1] == '.':
+#         return u'ending-dot',
+#     elif '-' in spacy_shape:
+#         return u'contains-hyphen'
+#     elif spacy_shape in string.punctuation:
+#         return u'punct'
+#     else:
+#         return u'other'
+
+# def messenger_ner(sentence):
+#     nlp = spacy.load('en')
+#     doc = nlp(sentence.decode('utf-8'))
+
+#     sentence_dict = {}
+#     for token in doc:
+#         local_shapes(token.shape_)
+#         sentence_dict[token] = (token.tag_, local_shapes(token.shape_))
+
+#     # print sentence_dict
+#     tagged_sentence = {}
+#     for word, value in sentence_dict.iteritems():
+#         word_pos, word_shape = value
+#         prob = 0.0
+#         max_prob = 0.0
+#         max_tag = ''
+#         for tag in tag_list:  
+#             # try, except to ignore one value when a word has not been seen before!
+#             try:      
+#                 pos_p = pos_probs[word_pos][tag]
+#             except:
+#                 pos_p = 1.0
+#             try:
+#                 shape_p = shape_probs[word_shape][tag]
+#             except:
+#                 shape_p = 1.0
+#             try:
+#                 word_p = word_probs[word][tag]
+#             except:
+#                 word_p = 1.0
+#             prob = pos_p * shape_p * word_p
+
+#             if prob > max_prob:
+#                 max_prob = prob
+#                 max_tag = tag
+#         tagged_sentence[word] = max_tag
+
+#     return tagged_sentence
+
+# Main Function, called from terminal to test all segments of the code
+# Explained in the Readme.md file
+
+# ------------------------------------------------
+# SECTION VIII: Terminal Commands to run the code 
+# ------------------------------------------------
+
+if len(sys.argv) > 1: # if user gave some input
+    if sys.argv[1] == "baseline":
+        baseline()
+    elif sys.argv[1] == "single": 
+        train_validate_model(data_small, sys.argv[2], word_probs) # Single indicator algo
+    elif sys.argv[1] == "combo":
+        if sys.argv[2] == "pos_word":
+            combined_model([('pos', pos_probs), ('word', word_probs)])
+        elif sys.argv[2] == "pos_shape":
+            combined_model([('pos', pos_probs), ('shape', shape_probs)])
+        elif sys.argv[2] == "word_shape":
+            combined_model([('shape', shape_probs), ('word', word_probs)])
+        elif sys.argv[2] == "pos_word_shape":
+            combined_model([('pos', pos_probs), ('shape', shape_probs), ('word', word_probs)])
+    elif sys.argv[1] == "alpha":
+        test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4])])
+    elif sys.argv[1] == "best_combo":
+        combined_model([('pos', pos_probs), ('shape', shape_probs), ('word', word_probs)])
+else:
+    print "You have entered an incorrect command. Please check the code documentation on how to run the code."
+
+# ---------------------------------------------------
+# SECTION VIIII: Scrapbook - delete before submission 
+# ---------------------------------------------------
+
+# Performance of Combo without these is better (when except is just auto 1.0)
+# Probability of each tag occuring in our FULL dataset
+# total_tags_prob = {'I-art': 0.026702957257148524, 'B-nat': 0.02155310121469845, 'B-gpe': 1.560978587089311, 'B-art': 0.04138958374858021, 'I-tim': 0.5999582289454335, 'B-org': 1.9201333621979586, 'I-per': 1.654248202080351, 'B-geo': 3.5709483269166764, 'I-org': 1.573376388672987, 'I-geo': 0.7053395424066803, 'O': 84.69338806168001, 'I-eve': 0.0283242082334754, 'B-eve': 0.03318796116245602, 'I-gpe': 0.0218392043281679, 'B-tim': 1.922517554810204, 'I-nat': 0.007247945541226028, 'B-per': 1.6188667837146293}
+# Probability of each tag occuring in our SMALL dataset
+# total_tags_prob = {'I-art': 0.11, 'B-nat': 0.045, 'B-gpe': 2.535, 'B-art': 0.185, 'I-tim': 0.25, 'B-org': 1.895, 'O': 85.56, 'B-geo': 2.555, 'I-org': 1.395, 'I-geo': 0.395, 'I-per': 1.775, 'I-eve': 0.07, 'B-eve': 0.09, 'I-gpe': 0.13, 'B-tim': 1.56, 'I-nat': 0.025, 'B-per': 1.425}
+
+# possible word shapes
+
 # [u'mixedcase', 
 # u'lowercase', 
 # u'camelcase', 
@@ -306,227 +410,3 @@ def multi_var_ner(shape_coeff, pos_coeff, word_coeff):
 # u'other', 
 # u'ending-dot', 
 # u'contains-hyphen']
-
-def camel(s):
-    return (s != s.lower() and s != s.upper())
-
-def local_shapes(spacy_shape):
-    if spacy_shape.islower():
-        return u'lowercase'
-    elif spacy_shape.isupper():
-        return u'uppercase'
-    elif not spacy_shape.isnumeric():
-       return u'mixedcase' 
-    elif spacy_shape[0].isupper():
-        return u'capitalized'
-    elif spacy_shape.isnumeric():
-        return u'number'
-    elif camel(spacy_shape):
-        return u'camelcase'
-    elif spacy_shape[len(spacy_shape)-1] == '.':
-        return u'ending-dot',
-    elif '-' in spacy_shape:
-        return u'contains-hyphen'
-    elif spacy_shape in string.punctuation:
-        return u'punct'
-    else:
-        return u'other'
-
-def messenger_ner(sentence):
-    nlp = spacy.load('en')
-    doc = nlp(sentence.decode('utf-8'))
-
-    sentence_dict = {}
-    for token in doc:
-        local_shapes(token.shape_)
-        sentence_dict[token] = (token.tag_, local_shapes(token.shape_))
-
-    # print sentence_dict
-    tagged_sentence = {}
-    for word, value in sentence_dict.iteritems():
-        word_pos, word_shape = value
-        prob = 0.0
-        max_prob = 0.0
-        max_tag = ''
-        for tag in tag_list:  
-            # try, except to ignore one value when a word has not been seen before!
-            try:      
-                pos_p = pos_probs[word_pos][tag]
-            except:
-                pos_p = 1.0
-            try:
-                shape_p = shape_probs[word_shape][tag]
-            except:
-                shape_p = 1.0
-            try:
-                word_p = word_probs[word][tag]
-            except:
-                word_p = 1.0
-            prob = pos_p * shape_p * word_p
-
-            if prob > max_prob:
-                max_prob = prob
-                max_tag = tag
-        tagged_sentence[word] = max_tag
-
-    return tagged_sentence
-
-# print "Tagged: ", messenger_ner("Hi! My name is John and I go to Harvard University")
-
-#---------------------------------------------------------------------------
-# def combined_model(feature_list):
-#     pred_train = []
-#     pred_valid = []
-
-#     # # training prediction
-#     count_correct = 0
-#     for i in range(len(data_small)):
-#         #if i % 100 == 0:
-#         #print(i)
-#         #tag_probs = {}
-#         max_prob = 0.0
-#         max_tag = ''
-#         for tag in tag_list:  
-#             prob = 1.0
-#             names = []
-#             for name, probs in feature_list:
-#                 names.append(name)
-#                 # try, except to ignore one value when a word has not been seen before!
-#                 try:      
-#                     p = probs[data_small.iloc[i][name]][tag]
-#                 except:
-#                     p = 1.0
-#                 prob *= p
-#             if prob > max_prob:
-#                 max_prob = prob
-#                 max_tag = tag
-#         #pred_tag = max(tag_probs.iterkeys(), key=(lambda key: tag_probs[key]))
-#         pred_tag = max_tag
-#         pred_train.append(pred_tag)
-#         if data_small.iloc[i]['tag'] == pred_tag:
-#             count_correct += 1
-#     train_accuracy = 1.0*count_correct / len(data_small)
-#     names_str = names[0]
-#     for n in names[1:]: 
-#         names_str = names_str + ", "
-#         names_str = names_str + n
-#     print "Train Accuracy using " + '(' + names_str + ')' + ": " + str(train_accuracy)
-
-#     # validation prediction
-#     count_correct = 0
-#     for i in range(len(data_valid)):
-#         #if i % 100 == 0:
-#         #    print(i)
-#         #tag_probs = {}
-#         max_prob = 0.0
-#         max_tag = ''
-#         for tag in tag_list:  
-#             prob = 1.0
-#             names = []
-#             for name, probs in feature_list:
-#                 names.append(name)
-#                 # try, except to ignore one value when a word has not been seen before!
-#                 try:      
-#                     p = probs[data_valid.iloc[i][name]][tag]
-#                 except:
-#                     p = 1.0
-#                 prob *= p
-#             if prob > max_prob:
-#                 max_prob = prob
-#                 max_tag = tag
-#         #pred_tag = max(tag_probs.iterkeys(), key=(lambda key: tag_probs[key]))
-#         pred_tag = max_tag
-#         pred_valid.append(pred_tag)
-#         if data_valid.iloc[i]['tag'] == pred_tag:
-#             count_correct += 1
-#     train_accuracy = 1.0*count_correct / len(data_valid)
-#     names_str = names[0]
-#     for n in names[1:]: 
-#         names_str = names_str + ", "
-#         names_str = names_str + n
-#     print "Validation Accuracy using " + '(' + names_str + ')' ": " + str(train_accuracy)
-#     print '-----------------------------------------------'
-
-# Below lines test combined models for test and validation accuracy
-#combined_model([('pos', pos_probs), ('shape', shape_probs), ('word', word_list)])
-#combined_model([('pos', pos_probs), ('shape', shape_probs)])
-#combined_model([('word', word_probs), ('shape', shape_probs)])
-#combined_model([('pos', pos_probs), ('word', word_probs)])
-
-# all coeffs = 1, all vars are wieghted equally
-
-# SECTION VI: TUNING 1. FIRST DO EXPLORATORY TUNING ON THE ALPHA (HALLUCINATION) PARAMETER ON INDIVIDUAL MODELS
-
-# UNCOMMENT WHEN ALPHA TESTING
-#print
-#print '-----------------------------------------------'
-#print "Section VI: ALPHA TESTING" + " Using Part of Speech (pos) and Shape:"
-#print '-----------------------------------------------'
-
-# function to re-create initial dictionaries with different alpha values (not 1.0)
-# def create_entity_dict2(indicator_list, indicator_name, indicator_dict_name, alpha):
-#     print "Alpha: " + str(alpha)
-#     for item in indicator_list:
-#         tag_prob_dict = {}
-#         for tag in tag_list:
-#             count = 0
-#             for i in data_small[data_small[indicator_name] == item]['tag']:
-#                 if i == tag:
-#                     count += 1
-#             tag_prob_dict.update({str(tag) : (1.0*count + alpha)/(len(data_small[data_small[indicator_name] == item]) + alpha*len(indicator_list))})
-#         indicator_dict_name[item] = tag_prob_dict
-#     return indicator_dict_name
-
-# how to use two previously made functions
-# create_entity_dict(word_list,'word', word_probs)
-# train_validate_model(data_small,'pos',pos_probs)
-
-# function takes in lists (as demonstrated below) so we can adjust alpha and test results
-# def test_for_alpha(indicator_lists, indicator_names, indicator_dict_names, alphas):
-#     tuple_list = []
-#     for i in range(len(indicator_lists)):
-#         dicto = create_entity_dict2(indicator_lists[i], indicator_names[i], indicator_dict_names[i], alphas[i])
-#         tuple_list.append((indicator_names[i], dicto))
-#     combined_model(tuple_list)
-
-# UNCOMMENT TO PERFORM ALPHA TESTING ON POS AND SHAPE
-#test_for_alpha([pos_list, shape_list], ['pos', 'shape'], [pos_probs, shape_probs], [1.0, 1.0])
-#test_for_alpha([pos_list, shape_list], ['pos', 'shape'], [pos_probs, shape_probs], [0.1, 0.1])
-#test_for_alpha([pos_list, shape_list], ['pos', 'shape'], [pos_probs, shape_probs], [1.0, 0.1])
-#test_for_alpha([pos_list, shape_list], ['pos', 'shape'], [pos_probs, shape_probs], [0.1, 1.0])
-# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [1.0, 5.0, 10.0])
-# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [1.0, 10.0, 5.0])
-# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [5.0, 1.0, 10.0])
-# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [5.0, 10.0, 1.0])
-# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [10.0, 5.0, 1.0])
-# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [10.0, 1.0, 5.0])
-
-# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.2, 0.4, 0.6])
-# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.2, 0.6, 0.4])
-# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.4, 0.2, 0.6])
-# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.4, 0.6, 0.2])
-# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.6, 0.2, 0.4])
-# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.6, 0.4, 0.2])
-
-# print "TESTING FOR WORD ALPHA"
-# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.5, 0.5, 0.9])
-# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.5, 0.5, 0.5])
-# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.5, 0.5, 0.1])
-
-# print "TESTING FOR SHAPE ALPHA"
-# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.5, 0.9, 0.5])
-# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.5, 0.5, 0.5])
-# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.5, 0.1, 0.5])
-
-# print "TESTING FOR POS ALPHA"
-# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.9, 0.5, 0.5])
-# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.5, 0.5, 0.5])
-# test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [0.1, 0.5, 0.5])
-
-
-# SECTION VII: TUNING 2. TUNE HYPERPARAMETERS TO WEIGHT OUR INDIVIDUAL MODELS
-# intuition: Word provides the strongest individual model (as expected), then POS, then Shape
-
-# multi_var_ner(shape_coeff, pos_coeff, word_coeff)
-
-
