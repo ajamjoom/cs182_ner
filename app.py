@@ -156,7 +156,7 @@ def webhook():
 
                             sentence_data = []
                             for i in xrange(len(words)):
-                                sentence_data.append([words[i], pos[i], shapes[i]])
+                                sentence_data.append([words[i], pos_tags[i], shapes[i]])
                                 
                             log("TOKENS")
                             log(tokens)
