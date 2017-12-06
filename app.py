@@ -4,7 +4,18 @@ import csv, codecs, cStringIO
 from datetime import datetime
 import ast
 import string
-
+# NEW IS BELOW
+import numpy as np
+import pandas as pd
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_extraction import DictVectorizer
+from sklearn.linear_model import Perceptron
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import precision_recall_fscore_support, f1_score
+from sklearn.metrics import accuracy_score
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.neighbors import KNeighborsClassifier
+# NEW IS ABOVE
 import os
 import requests
 import operator
@@ -199,6 +210,58 @@ def webhook():
                                         return u'mixedcase'
                                 else:
                                     return u'other'
+
+                            def features_from_tag(test_data):
+                                response_1 = data_small['word']
+                                response_2 = data_small['pos']
+                                response_3 = data_small['shape']
+                                
+                                predictor = data_small['tag']
+                                pred_final = pd.get_dummies(predictor)
+                                
+                                classify1 = RandomForestClassifier()
+                                classify2 = RandomForestClassifier()
+                                classify3 = RandomForestClassifier()
+
+                                
+                                classify1.fit(pred_final, response_1)
+                                classify2.fit(pred_final, response_2)
+                                classify3.fit(pred_final, response_3)
+                                
+                                # get likelihoods for each tag
+                                
+                                # GET ONE PREDICTION FOR EAST POSSIBLE TAG
+                                target = pd.get_dummies(pd.DataFrame(tag_list))
+                                
+                                p1 = classify1.predict_proba(target)
+                                p2 = classify2.predict_proba(target)
+                                p3 = classify3.predict_proba(target)
+                                
+                                emission_probs = {}
+                                for i in range(len(tag_list)):
+                                    word_preds = {}
+                                    words = classify1.classes_
+                                    for j in range(len(words)):
+                                        p = p1[i][j]
+                                        word_preds[words[j]] = p
+                                        
+                                    pos_preds = {}
+                                    poss = classify2.classes_
+                                    for k in range(len(poss)):
+                                        pos_preds[poss[k]] = p2[i][k]
+                                    
+                                    shape_preds = {}
+                                    shapes = classify3.classes_
+                                    for l in range(len(shapes)):
+                                        shape_preds[shapes[l]] = p3[i][l]
+                                    
+                                    emission_probs[list(set(data_small['tag']))[i]] = [word_preds, pos_preds, shape_preds]
+                                    
+                                # important to return order of classes in order to map later
+                                return emission_probs, classify1.classes_, classify2.classes_, classify3.classes_
+                                
+
+                            f, final_word_list, final_pos_list, final_shape_list = features_from_tag(data_valid)
 
                             def viterbi_prediction(sentence_data):        
                                 valid_prediction = ''
