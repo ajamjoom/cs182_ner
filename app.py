@@ -12,6 +12,7 @@ import re
 import nltk
 from flask import Flask, render_template, request
 from collections import Counter
+import f_dict
 
 app = Flask(__name__)
 
@@ -159,6 +160,7 @@ def webhook():
 
                             initial_tag_probs = {}
                             transition_probs = {}
+                            f = f_dict.f
 
                             def dict_from_csv(csv_name):
                                 print "on csv_file_name: ", csv_name
