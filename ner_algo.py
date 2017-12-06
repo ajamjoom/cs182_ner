@@ -51,6 +51,11 @@ word_list = list(set(data_small['word'])) # All the words in the small data set 
 # Different name entity tags available
 tag_list = list(set(y_train.values)) 
 
+print "pos_list", pos_list 
+print "shape_list", shape_list
+print "word_list", word_list
+print "tag_list", tag_list
+
 end = time.time()
 
 # ------------------------------------------------------------------
@@ -366,24 +371,24 @@ def test_for_alpha(indicator_lists, indicator_names, indicator_dict_names, alpha
 # SECTION VIII: Terminal Commands to run the code 
 # ------------------------------------------------
 
-if len(sys.argv) > 1: # if user gave some input
-    if sys.argv[1] == "baseline":
-        baseline()
-    elif sys.argv[1] == "single": 
-        train_validate_model(data_small, sys.argv[2], word_probs) # Single indicator algo
-    elif sys.argv[1] == "combo":
-        if sys.argv[2] == "pos_word":
-            combined_model([('pos', pos_probs), ('word', word_probs)])
-        elif sys.argv[2] == "pos_shape":
-            combined_model([('pos', pos_probs), ('shape', shape_probs)])
-        elif sys.argv[2] == "word_shape":
-            combined_model([('shape', shape_probs), ('word', word_probs)])
-        elif sys.argv[2] == "pos_word_shape":
-            combined_model([('pos', pos_probs), ('shape', shape_probs), ('word', word_probs)])
-    elif sys.argv[1] == "alpha":
-        test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4])])
-else:
-    print "You have entered an incorrect command. Please check the code documentation on how to run the code."
+# if len(sys.argv) > 1: # if user gave some input
+#     if sys.argv[1] == "baseline":
+#         baseline()
+#     elif sys.argv[1] == "single": 
+#         train_validate_model(data_small, sys.argv[2], word_probs) # Single indicator algo
+#     elif sys.argv[1] == "combo":
+#         if sys.argv[2] == "pos_word":
+#             combined_model([('pos', pos_probs), ('word', word_probs)])
+#         elif sys.argv[2] == "pos_shape":
+#             combined_model([('pos', pos_probs), ('shape', shape_probs)])
+#         elif sys.argv[2] == "word_shape":
+#             combined_model([('shape', shape_probs), ('word', word_probs)])
+#         elif sys.argv[2] == "pos_word_shape":
+#             combined_model([('pos', pos_probs), ('shape', shape_probs), ('word', word_probs)])
+#     elif sys.argv[1] == "alpha":
+#         test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4])])
+# else:
+#     print "You have entered an incorrect command. Please check the code documentation on how to run the code."
 
 # ---------------------------------------------------
 # SECTION VIIII: Scrapbook - delete before submission 
