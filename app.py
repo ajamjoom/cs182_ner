@@ -159,7 +159,7 @@ def webhook():
                                 sentence_data.append([words[i], pos_tags[i], shapes[i]])
                                 
                             log("TOKENS")
-                            log(tokens)
+                            log(words)
                             log("POS_TAGS")
                             log(pos_tags)
                             log("TOKEN_SHAPES")
