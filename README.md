@@ -6,11 +6,14 @@ CS182 Final Project- building an NER Model using Hidden Markov Models (Josh Kupp
 
 How to run the code from your terminal:
 
-File = ner_algo.py
+File = hmm_viterbi_model.py
   
   1. Run HMM Viterbi Model (Fastest and most accurate tagger)
   
-    python hmm_viterbi_model.py
+    python hmm_viterbi_model.py (#training points)
+
+	i.e. Ôpython hmm_viterbi_model.py 20000Õ to run with 20000 data points
+	use an int no larger than 600000
     
 File = ner_algo.py
 
@@ -38,5 +41,6 @@ File = ner_algo.py
   
   
   
+
 
 

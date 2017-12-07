@@ -1,6 +1,7 @@
 import json
 import pandas as pd
 import numpy as np
+import sys
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.linear_model import Perceptron
 from sklearn.model_selection import train_test_split
@@ -55,8 +56,7 @@ def run_new_model(training_points, testing_points):
     pred_b = []
     for i in range(len(data_small)):
         pred_b.append('O')
-        
-    print
+
     print("BASELINE ALL 'O' CLASSIFIER")
     print("Accuracy Score: " + str(accuracy_score(data_small['tag'], pred_b)))
     print("F1 Score: " + str(f1_score(data_small['tag'], pred_b, labels=tag_list, average="weighted")))
@@ -220,17 +220,10 @@ def run_new_model(training_points, testing_points):
                 max_tag = 'O'
                 for tag in tag_list:
                     # p(e|x)
-                    try: 
-                        emission = 1.0*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
-                    except: 
-                        count +=1
-                        try:
-                            emission = 1.0*f[tag][2][shape] * initial_tag_probs[tag]
-                        except:
-                            try:
-                                emission = 1.0*f[tag][1][pos] * initial_tag_probs[tag]
-                            except:
-                                emission = 1.0*initial_tag_probs
+                    #try:
+                    emission = 1.0*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
+                    #except: 
+                        #emission = 1.0*f[tag][2][shape] * initial_tag_probs[tag]
                     # transition model
                     prev_tag = row['prev-iob']
                     transition_prob = transition_probs[tag][prev_tag]
@@ -249,7 +242,7 @@ def run_new_model(training_points, testing_points):
         print("Validation F1 Score: " + str(f1_score(data_valid['tag'], valid_prediction, labels=tag_list, average="weighted")))
 
     print("VITERBI ALGORITHM TESTING")
-    print(str(training_points) + " Data Points, With Prev-IOB, Markov Model")
+    print(str(training_points) + " Training Points, With Prev-IOB, Markov Model")
     viterbi_prediction()
 
 
@@ -363,19 +356,12 @@ def run_new_model(training_points, testing_points):
             else: 
                 max_tag = 'O'
                 max_prob = -1
-                max_tag = 'O'
                 for tag in tag_list:
                     # p(e|x)
-                    try: 
-                        emission = 1.0*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
-                    except: 
-                        try:
-                            emission = 1.0*f[tag][2][shape] * initial_tag_probs[tag]
-                        except:
-                            try:
-                                emission = 1.0*f[tag][1][pos] * initial_tag_probs[tag]
-                            except:
-                                emission = 1.0*initial_tag_probs
+                    #try
+                    emission = 1.0*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
+                    #except: 
+                    #    emission = 1.0*f[tag][2][shape] * initial_tag_probs[tag]
                     
                     # transition model
                     prev_tag = row['prev-iob']
@@ -396,8 +382,26 @@ def run_new_model(training_points, testing_points):
 
         
     print
-    print(str(training_points) + " Data Points, With Prev-Prev-IOB, Loosened Model")
-    loosened_viterbi_prediction()
+    print(str(training_points) + " Training Points, With Prev-Prev-IOB, Loosened Model")
 
-run_new_model(20000,10000)
+    loosened_viterbi_prediction()
+    print
+
+
+# run with the provided argument
+
+try: 
+    int(sys.argv[1])
+except: 
+    print
+    print "Incorrect command line call. Check readme.md for usage"
+    print
+    sys.exit()
+if isinstance(int(sys.argv[1]), int):
+    run_new_model(int(sys.argv[1]), int(round(int(sys.argv[1])*0.5)))
+else:
+    print
+    print "Incorrect command line call. Check readme.md for usage"
+    print
+
 

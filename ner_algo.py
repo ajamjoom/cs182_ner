@@ -30,8 +30,8 @@ data.dropna(inplace=True)
 
 # Fetch a smaller sample of data for testing (takes less computational time). 
 # Change this for production
-data_small = data[:20000]
-data_valid = data[20001:30000]
+data_small = data[:100000]
+data_valid = data[100000:150000]
 
 # tag is the response variable
 preds = list(data.columns.values)
@@ -51,10 +51,10 @@ word_list = list(set(data_small['word'])) # All the words in the small data set 
 # Different name entity tags available
 tag_list = list(set(y_train.values)) 
 
-print "pos_list", pos_list 
-print "shape_list", shape_list
-print "word_list", word_list
-print "tag_list", tag_list
+#print "pos_list", pos_list 
+#print "shape_list", shape_list
+#print "word_list", word_list
+#print "tag_list", tag_list
 
 end = time.time()
 
@@ -92,18 +92,18 @@ def create_entity_dict(indicator_list, indicator_name, indicator_dict_name, alph
                     count += 1
             tag_prob_dict.update({str(tag) : (1.0*count + alpha)/(len(data_small[data_small[indicator_name] == item]) + alpha*len(indicator_list))})
         indicator_dict_name[item] = tag_prob_dict
-    csv_from_dict(indicator_name+'.csv', indicator_dict_name)
+    csv_from_dict(indicator_name+'_100k.csv', indicator_dict_name)
 
 # Uncomment the lines below to recreate the CSV indicator prob files (AKA do not uncomment)
 
 # # Populate the shape dictionary from the small training data set
-# create_entity_dict(shape_list,'shape', shape_probs, 2.0) # Uncomment to recreate CSV file
+create_entity_dict(shape_list,'shape', shape_probs, 2.0) # Uncomment to recreate CSV file
     
 # # Populate the part-of-speech dictionary from the small training data set
-# create_entity_dict(pos_list,'pos', pos_probs, 2.0) # Uncomment to recreate CSV file
+create_entity_dict(pos_list,'pos', pos_probs, 2.0) # Uncomment to recreate CSV file
 
 # # Populate the words dictionary from the small training data set
-# create_entity_dict(word_list,'word', word_probs, 0.01) # Uncomment to recreate CSV file
+create_entity_dict(word_list,'word', word_probs, 0.01) # Uncomment to recreate CSV file
 
 # ----------------------------------------------------
 # SECTION III: Pull the Indicator Dicts from CSV files
@@ -118,9 +118,9 @@ def dict_from_csv(csv_name):
     return new_dict
 
 # Populate the pos, word, and shape dicts from their CSV files
-pos_probs = dict_from_csv('pos.csv')
-shape_probs = dict_from_csv('shape.csv')
-word_probs = dict_from_csv('word.csv')
+pos_probs = dict_from_csv('pos_100k.csv')
+shape_probs = dict_from_csv('shape_100k.csv')
+word_probs = dict_from_csv('word_100k.csv')
 
 # Function that checked if the CSV files have the correct probabilities (for testing)
 def test_dict_probs(indicator_dict, dict_name):    
