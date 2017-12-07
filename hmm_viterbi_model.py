@@ -199,16 +199,17 @@ def run_new_model(training_points, testing_points):
                         max_tag = 'O'
                         for tag in tag_list:
                             # p(e|x)
-                            try:
-                                emission = 1.0*f[tag][0][word]*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
-                            except:
-                                try:
-                                    emission = 1.0*f[tag][0][word]*f[tag][2][shape] * initial_tag_probs[tag]
-                                except:
-                                    try: 
-                                        emission = 1.0*f[tag][0][word]*f[tag][1][pos] * initial_tag_probs[tag]
-                                    except: 
-                                        emission = 1.0*f[tag][0][word] * initial_tag_probs[tag]
+                            emission = 1.0*f[tag][0][word]*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
+                            #try:
+                            #    emission = 1.0*f[tag][0][word]*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
+                            #except:
+                            #    try:
+                            #        emission = 1.0*f[tag][0][word]*f[tag][2][shape] * initial_tag_probs[tag]
+                            #    except:
+                            #        try: 
+                            #            emission = 1.0*f[tag][0][word]*f[tag][1][pos] * initial_tag_probs[tag]
+                            #        except: 
+                            #            emission = 1.0*f[tag][0][word] * initial_tag_probs[tag]
                     
                             # transition model
                             prev_tag = row['prev-iob']
@@ -354,17 +355,17 @@ def run_new_model(training_points, testing_points):
                         max_tag = 'O'
                         for tag in tag_list:
                             # p(e|x)
-                            #emission = 1.0*f[tag][0][word]*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
-                            try:
-                                emission = 1.0*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
-                            except: 
-                                try: 
-                                    emission = 1.0*f[tag][2][shape] * initial_tag_probs[tag]
-                                except:
-                                    try: 
-                                        emission = 1.0*f[tag][1][pos] * initial_tag_probs[tag]
-                                    except: 
-                                        emission = 1.0 * initial_tag_probs[tag]
+                            emission = 1.0*f[tag][0][word]*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
+                            #try:
+                            #    emission = 1.0*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
+                            #except: 
+                            #    try: 
+                            #        emission = 1.0*f[tag][2][shape] * initial_tag_probs[tag]
+                            #    except:
+                            #        try: 
+                            #            emission = 1.0*f[tag][1][pos] * initial_tag_probs[tag]
+                            #        except: 
+                            #            emission = 1.0 * initial_tag_probs[tag]
                             # transition model
                             prev_tag = row['prev-iob']
                             prev_prev_tag = row['prev-prev-iob']
