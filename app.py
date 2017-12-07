@@ -22,85 +22,9 @@ import re
 import nltk
 from flask import Flask, render_template, request
 from collections import Counter
-# import f_dict
 
 app = Flask(__name__)
 
-# def csv_from_dict(csv_name, dict_name):
-#     # Truncate content of file if there is anything there
-#     f = open(csv_name, "w+")
-#     f.close()
-#     # Upload new content to the selected empty csv file
-#     with open(csv_name, 'wb') as csv_file:
-#         writer = csv.writer(csv_file)
-#         for key, value in dict_name.items():
-#             writer.writerow([key.encode('utf-8').strip(), value]) # This works for all dicts
-#             #writer.writerow([key, value]) # This doesn't work for the words dictionary
-# initial_tag_probs = {}
-# transition_probs = {}
-# f = {}
-
-# csv_from_dict('initial_tag_probs.csv', initial_tag_probs)
-# csv_from_dict('transition_probs.csv', transition_probs)
-# csv_from_dict('f.csv', f)
-
-# initial_tag_probs = {}
-# transition_probs = {}
-# f = {}
-
-# def viterbi_prediction(sentence_data):        
-#     valid_prediction = []
-#     count = 0
-#     for i in xrange(len(sentence_data)):
-#         data = sentence_data[i]
-#         word = data[0]
-#         pos = data[1]
-#         shape = data[2]
-#         max_tag = 'O'
-#         if word in list(f['O'][0].keys()):
-#             if pos in list(f['O'][1].keys()):
-#                 if shape in list(f['O'][2].keys()):
-#                     max_prob = -1000000
-#                     max_tag = 'O'
-#                     for tag in tag_list:
-#                         ####### NEED ALL THESE
-#                         emission = 1.0*f[tag][0][word]*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
-                
-#                         # transition model
-#                         # prev_tag = row['prev-iob']
-#                         pre_tag = 'O' # if the first entry. Is this correct?
-#                         if i > 0 :
-#                             pre_tag = valid_prediction[i-1]
-#                         transition_prob = transition_probs[tag][prev_tag] ###NEED THIS
-                    
-#                         prob = emission * transition_prob
-                    
-#                         if prob > max_prob:
-#                             max_prob = prob
-#                             max_tag = tag
-#         else: 
-#             max_tag = 'O'
-#             max_prob = -1
-#             max_tag = 'O'
-#             for tag in tag_list:
-#                 # p(e|x)
-#                 emission = 1.0*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
-                
-#                 # transition model
-#                 #prev_tag = row['prev-iob']
-#                 pre_tag = 'O' # if the first entry. Is this correct?
-#                 if i > 0:
-#                     pre_tag = valid_prediction[i-1]
-#                 transition_prob = transition_probs[tag][prev_tag]
-                    
-#                 prob = emission * transition_prob
-            
-#                 if prob > max_prob:
-#                     max_prob = prob
-#                     max_tag = tag
-            
-#         valid_prediction += '('+word +',' +max_tag +')'
-#     return valid_prediction
 
 @app.route('/', methods=['GET'])
 def verify():
@@ -111,9 +35,6 @@ def verify():
             return "Verification token mismatch", 403
         return request.args["hub.challenge"], 200
     
-    # send_quickrep_message(sender_id, messenger_ner(sentence_data))
-    #send_quickrep_message(sender_id,viterbi_prediction(sentence_data))
-    # return viterbi_prediction(sentence_data)
     return "CS182 Final Project | NER with HMM and fb messenger user output | by Abdulrahman Jamjoom and Josh Kupersmith", 200
 
 

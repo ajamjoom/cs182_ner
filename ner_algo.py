@@ -14,7 +14,7 @@ import collections
 import sys
 import warnings
 
-# ignores the f1 warning
+# Ignores the f1 warning
 warnings.filterwarnings('ignore')
 
 # ------------------------------------------------
@@ -50,13 +50,6 @@ word_list = list(set(data_small['word'])) # All the words in the small data set 
 
 # Different name entity tags available
 tag_list = list(set(y_train.values)) 
-
-#print "pos_list", pos_list 
-#print "shape_list", shape_list
-#print "word_list", word_list
-#print "tag_list", tag_list
-
-end = time.time()
 
 # ------------------------------------------------------------------
 # SECTION II: PreProcessing the Shape and Part-of-Speech dictionaries
@@ -97,13 +90,13 @@ def create_entity_dict(indicator_list, indicator_name, indicator_dict_name, alph
 # Uncomment the lines below to recreate the CSV indicator prob files (AKA do not uncomment)
 
 # # Populate the shape dictionary from the small training data set
-create_entity_dict(shape_list,'shape', shape_probs, 2.0) # Uncomment to recreate CSV file
+# create_entity_dict(shape_list,'shape', shape_probs, 2.0) # Uncomment to recreate CSV file
     
 # # Populate the part-of-speech dictionary from the small training data set
-create_entity_dict(pos_list,'pos', pos_probs, 2.0) # Uncomment to recreate CSV file
+# create_entity_dict(pos_list,'pos', pos_probs, 2.0) # Uncomment to recreate CSV file
 
 # # Populate the words dictionary from the small training data set
-create_entity_dict(word_list,'word', word_probs, 0.01) # Uncomment to recreate CSV file
+# create_entity_dict(word_list,'word', word_probs, 0.01) # Uncomment to recreate CSV file
 
 # ----------------------------------------------------
 # SECTION III: Pull the Indicator Dicts from CSV files
@@ -296,88 +289,23 @@ def test_for_alpha(indicator_lists, indicator_names, indicator_dict_names, alpha
         tuple_list.append((indicator_names[i], dicto))
     combined_model(tuple_list)
 
-# --------------------------------------------------
-# SECTION VII: NER for Facebook Messenger 
-# --------------------------------------------------
-
-# def camel(s):
-#     return (s != s.lower() and s != s.upper())
-
-# def local_shapes(spacy_shape):
-#     if spacy_shape.islower():
-#         return u'lowercase'
-#     elif spacy_shape.isupper():
-#         return u'uppercase'
-#     elif not spacy_shape.isnumeric():
-#        return u'mixedcase' 
-#     elif spacy_shape[0].isupper():
-#         return u'capitalized'
-#     elif spacy_shape.isnumeric():
-#         return u'number'
-#     elif camel(spacy_shape):
-#         return u'camelcase'
-#     elif spacy_shape[len(spacy_shape)-1] == '.':
-#         return u'ending-dot',
-#     elif '-' in spacy_shape:
-#         return u'contains-hyphen'
-#     elif spacy_shape in string.punctuation:
-#         return u'punct'
-#     else:
-#         return u'other'
-
-# def messenger_ner(sentence):
-#     nlp = spacy.load('en')
-#     doc = nlp(sentence.decode('utf-8'))
-
-#     sentence_dict = {}
-#     for token in doc:
-#         local_shapes(token.shape_)
-#         sentence_dict[token] = (token.tag_, local_shapes(token.shape_))
-
-#     # print sentence_dict
-#     tagged_sentence = {}
-#     for word, value in sentence_dict.iteritems():
-#         word_pos, word_shape = value
-#         prob = 0.0
-#         max_prob = 0.0
-#         max_tag = ''
-#         for tag in tag_list:  
-#             # try, except to ignore one value when a word has not been seen before!
-#             try:      
-#                 pos_p = pos_probs[word_pos][tag]
-#             except:
-#                 pos_p = 1.0
-#             try:
-#                 shape_p = shape_probs[word_shape][tag]
-#             except:
-#                 shape_p = 1.0
-#             try:
-#                 word_p = word_probs[word][tag]
-#             except:
-#                 word_p = 1.0
-#             prob = pos_p * shape_p * word_p
-
-#             if prob > max_prob:
-#                 max_prob = prob
-#                 max_tag = tag
-#         tagged_sentence[word] = max_tag
-
-#     return tagged_sentence
-
-# Main Function, called from terminal to test all segments of the code
-# Explained in the Readme.md file
-
 # ------------------------------------------------
-# SECTION VIII: Terminal Commands to run the code 
+# SECTION VII: Terminal Commands to run the code 
 # ------------------------------------------------
 
 if len(sys.argv) > 1: # if user gave some input
     if sys.argv[1] == "baseline":
         baseline()
-    elif sys.argv[1] == "single": 
-        train_validate_model(data_small, sys.argv[2], word_probs) # Single indicator algo
-    elif sys.argv[1] == "combo":
-        if sys.argv[2] == "pos_word":
+    elif sys.argv[1] == "best":
+        combined_model([('pos', pos_probs), ('shape', shape_probs), ('word', word_probs)])
+    elif sys.argv[1] == "test": 
+        if sys.argv[2] == "pos":
+            train_validate_model(data_small, sys.argv[2], word_probs) # Single indicator algo
+        elif sys.argv[2] == "shape":
+            train_validate_model(data_small, sys.argv[2], word_probs) # Single indicator algo
+        elif sys.argv[2] == "word":
+            train_validate_model(data_small, sys.argv[2], word_probs) # Single indicator algo
+        elif sys.argv[2] == "pos_word":
             combined_model([('pos', pos_probs), ('word', word_probs)])
         elif sys.argv[2] == "pos_shape":
             combined_model([('pos', pos_probs), ('shape', shape_probs)])
@@ -385,7 +313,7 @@ if len(sys.argv) > 1: # if user gave some input
             combined_model([('shape', shape_probs), ('word', word_probs)])
         elif sys.argv[2] == "pos_word_shape":
             combined_model([('pos', pos_probs), ('shape', shape_probs), ('word', word_probs)])
-    elif sys.argv[1] == "alpha":
+    elif sys.argv[1] == "alpha_test":
         test_for_alpha([pos_list, shape_list, word_list], ['pos', 'shape', 'word'], [pos_probs, shape_probs, word_probs], [float(sys.argv[2]), float(sys.argv[3]), float(sys.argv[4])])
 else:
     print "You have entered an incorrect command. Please check the code documentation on how to run the code."
@@ -399,17 +327,3 @@ else:
 # total_tags_prob = {'I-art': 0.026702957257148524, 'B-nat': 0.02155310121469845, 'B-gpe': 1.560978587089311, 'B-art': 0.04138958374858021, 'I-tim': 0.5999582289454335, 'B-org': 1.9201333621979586, 'I-per': 1.654248202080351, 'B-geo': 3.5709483269166764, 'I-org': 1.573376388672987, 'I-geo': 0.7053395424066803, 'O': 84.69338806168001, 'I-eve': 0.0283242082334754, 'B-eve': 0.03318796116245602, 'I-gpe': 0.0218392043281679, 'B-tim': 1.922517554810204, 'I-nat': 0.007247945541226028, 'B-per': 1.6188667837146293}
 # Probability of each tag occuring in our SMALL dataset
 # total_tags_prob = {'I-art': 0.11, 'B-nat': 0.045, 'B-gpe': 2.535, 'B-art': 0.185, 'I-tim': 0.25, 'B-org': 1.895, 'O': 85.56, 'B-geo': 2.555, 'I-org': 1.395, 'I-geo': 0.395, 'I-per': 1.775, 'I-eve': 0.07, 'B-eve': 0.09, 'I-gpe': 0.13, 'B-tim': 1.56, 'I-nat': 0.025, 'B-per': 1.425}
-
-# possible word shapes
-
-# [u'mixedcase', 
-# u'lowercase', 
-# u'camelcase', 
-# u'uppercase', 
-# u'capitalized',
-# u'number', 
-# u'abbreviation', ######
-# u'punct', 
-# u'other', 
-# u'ending-dot', 
-# u'contains-hyphen']
