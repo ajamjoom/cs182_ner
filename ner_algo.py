@@ -31,7 +31,7 @@ data.dropna(inplace=True)
 # Fetch a smaller sample of data for testing (takes less computational time). 
 # Change this for production
 data_small = data[:100000]
-data_valid = data[100000:150000]
+data_valid = data[100000:120000]
 
 # tag is the response variable
 preds = list(data.columns.values)
@@ -146,22 +146,22 @@ def train_validate_model(data_set, indicator_name, indicator_dict_name):
     pred_train = []
     pred_valid = []
 
-    count_correct = 0
-    data_set_len = len(data_set)
-    for i in range(data_set_len):
-        try:
-            # get the key corresponding to the max value in dict
-            dict_use = indicator_dict_name[data_set.iloc[i][indicator_name]] # this might be buggy, is 'pos' correct?
-            pred_tag = max(dict_use.iterkeys(), key=(lambda key: dict_use[key]))
-        except:
-            pred_tag = 'O'
-            do='nothing' # figure out this case later
-        pred_train.append(pred_tag)
-        if data_set.iloc[i]['tag'] == pred_tag:
-            count_correct += 1
-    train_accuracy = 1.0*count_correct / data_set_len
-    print '------------- Single Indicator --------------'
-    print "     Training F1-Score using " + indicator_name + ': ' +  str(f1_score(data_set['tag'], pred_train, labels=tag_list, average="weighted"))
+    # count_correct = 0
+    # data_set_len = len(data_set)
+    # for i in range(data_set_len):
+    #     try:
+    #         # get the key corresponding to the max value in dict
+    #         dict_use = indicator_dict_name[data_set.iloc[i][indicator_name]] # this might be buggy, is 'pos' correct?
+    #         pred_tag = max(dict_use.iterkeys(), key=(lambda key: dict_use[key]))
+    #     except:
+    #         pred_tag = 'O'
+    #         do='nothing' # figure out this case later
+    #     pred_train.append(pred_tag)
+    #     if data_set.iloc[i]['tag'] == pred_tag:
+    #         count_correct += 1
+    # train_accuracy = 1.0*count_correct / data_set_len
+    # print '------------- Single Indicator --------------'
+    # print "     Training F1-Score using " + indicator_name + ': ' +  str(f1_score(data_set['tag'], pred_train, labels=tag_list, average="weighted"))
 
     # validation prediction
     count_correct = 0
@@ -195,38 +195,38 @@ def combined_model(feature_list):
     pred_train = []
     pred_valid = []
 
-    # training prediction
-    count_correct = 0
-    for i in range(len(data_small)):
-        max_prob = 0.0
-        max_tag = ''
-        for tag in tag_list:  
-            prob = 1.0
-            names = []
-            for name, probs in feature_list:
-                names.append(name)
-                # try, except to ignore one value when a word has not been seen before!
-                try:      
-                    p = probs[data_small.iloc[i][name]][tag]
-                except:
-                    # p = total_tags_prob[tag] # performs worse that 1.0 (WHY?)
-                    p = 1.0
-                prob *= p
-            if prob > max_prob:
-                max_prob = prob
-                max_tag = tag
-        prob = 0.0
-        pred_tag = max_tag
-        pred_train.append(pred_tag)
-        if data_small.iloc[i]['tag'] == pred_tag:
-            count_correct += 1
-    train_accuracy = 1.0*count_correct / len(data_small)
-    names_str = names[0]
-    for n in names[1:]: 
-        names_str = names_str + ", "
-        names_str = names_str + n
-    print '------------- Combo Algorithm --------------'
-    print "     Train F1-Score using " + '(' + names_str + ')' ": " +  str(f1_score(data_small['tag'], pred_train, labels=tag_list, average="weighted"))
+    # # training prediction
+    # count_correct = 0
+    # for i in range(len(data_small)):
+    #     max_prob = 0.0
+    #     max_tag = ''
+    #     for tag in tag_list:  
+    #         prob = 1.0
+    #         names = []
+    #         for name, probs in feature_list:
+    #             names.append(name)
+    #             # try, except to ignore one value when a word has not been seen before!
+    #             try:      
+    #                 p = probs[data_small.iloc[i][name]][tag]
+    #             except:
+    #                 # p = total_tags_prob[tag] # performs worse that 1.0 (WHY?)
+    #                 p = 1.0
+    #             prob *= p
+    #         if prob > max_prob:
+    #             max_prob = prob
+    #             max_tag = tag
+    #     prob = 0.0
+    #     pred_tag = max_tag
+    #     pred_train.append(pred_tag)
+    #     if data_small.iloc[i]['tag'] == pred_tag:
+    #         count_correct += 1
+    # train_accuracy = 1.0*count_correct / len(data_small)
+    # names_str = names[0]
+    # for n in names[1:]: 
+    #     names_str = names_str + ", "
+    #     names_str = names_str + n
+    # print '------------- Combo Algorithm --------------'
+    # print "     Train F1-Score using " + '(' + names_str + ')' ": " +  str(f1_score(data_small['tag'], pred_train, labels=tag_list, average="weighted"))
 
     # validation prediction
     count_correct = 0
@@ -300,9 +300,9 @@ if len(sys.argv) > 1: # if user gave some input
         combined_model([('pos', pos_probs), ('word', word_probs)])
     elif sys.argv[1] == "test": 
         if sys.argv[2] == "pos":
-            train_validate_model(data_small, sys.argv[2], word_probs) # Single indicator algo
+            train_validate_model(data_small, sys.argv[2], pos_probs) # Single indicator algo
         elif sys.argv[2] == "shape":
-            train_validate_model(data_small, sys.argv[2], word_probs) # Single indicator algo
+            train_validate_model(data_small, sys.argv[2], shape_probs) # Single indicator algo
         elif sys.argv[2] == "word":
             train_validate_model(data_small, sys.argv[2], word_probs) # Single indicator algo
         elif sys.argv[2] == "pos_word":

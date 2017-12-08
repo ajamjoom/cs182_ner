@@ -75,7 +75,7 @@ def run_new_model(training_points, testing_points):
 
 
     # FUNCTION TO USE TESTED RANDOM FORESTS TO PREDICT FEATURE PROBABILITIES BASED ON TAG
-    def features_from_tag(test_data):
+    def features_from_tag():
         response_1 = data_small['word']
         response_2 = data_small['pos']
         response_3 = data_small['shape']
@@ -124,7 +124,7 @@ def run_new_model(training_points, testing_points):
         return emission_probs, classify1.classes_, classify2.classes_, classify3.classes_
         
     # run the function above
-    f, final_word_list, final_pos_list, final_shape_list = features_from_tag(data_valid)
+    f, final_word_list, final_pos_list, final_shape_list = features_from_tag()
 
 
     # FUNCTION THAT USES VITERBI ALGORITHM TO PREDICT 
@@ -200,6 +200,16 @@ def run_new_model(training_points, testing_points):
                         for tag in tag_list:
                             # p(e|x)
                             emission = 1.0*f[tag][0][word]*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
+                            #try:
+                            #    emission = 1.0*f[tag][0][word]*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
+                            #except:
+                            #    try:
+                            #        emission = 1.0*f[tag][0][word]*f[tag][2][shape] * initial_tag_probs[tag]
+                            #    except:
+                            #        try: 
+                            #            emission = 1.0*f[tag][0][word]*f[tag][1][pos] * initial_tag_probs[tag]
+                            #        except: 
+                            #            emission = 1.0*f[tag][0][word] * initial_tag_probs[tag]
                     
                             # transition model
                             prev_tag = row['prev-iob']
@@ -217,13 +227,18 @@ def run_new_model(training_points, testing_points):
                 
                 max_tag = 'O'
                 max_prob = -1
-                max_tag = 'O'
                 for tag in tag_list:
                     # p(e|x)
-                    #try:
-                    emission = 1.0*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
-                    #except: 
-                        #emission = 1.0*f[tag][2][shape] * initial_tag_probs[tag]
+                    try:
+                        emission = 1.0*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
+                    except: 
+                        try: 
+                            emission = 1.0*f[tag][2][shape] * initial_tag_probs[tag]
+                        except:
+                            try: 
+                                emission = 1.0*f[tag][1][pos] * initial_tag_probs[tag]
+                            except: 
+                                emission = 1.0 * initial_tag_probs[tag]
                     # transition model
                     prev_tag = row['prev-iob']
                     transition_prob = transition_probs[tag][prev_tag]
@@ -341,7 +356,16 @@ def run_new_model(training_points, testing_points):
                         for tag in tag_list:
                             # p(e|x)
                             emission = 1.0*f[tag][0][word]*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
-                    
+                            #try:
+                            #    emission = 1.0*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
+                            #except: 
+                            #    try: 
+                            #        emission = 1.0*f[tag][2][shape] * initial_tag_probs[tag]
+                            #    except:
+                            #        try: 
+                            #            emission = 1.0*f[tag][1][pos] * initial_tag_probs[tag]
+                            #        except: 
+                            #            emission = 1.0 * initial_tag_probs[tag]
                             # transition model
                             prev_tag = row['prev-iob']
                             prev_prev_tag = row['prev-prev-iob']
@@ -358,10 +382,16 @@ def run_new_model(training_points, testing_points):
                 max_prob = -1
                 for tag in tag_list:
                     # p(e|x)
-                    #try
-                    emission = 1.0*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
-                    #except: 
-                    #    emission = 1.0*f[tag][2][shape] * initial_tag_probs[tag]
+                    try:
+                        emission = 1.0*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
+                    except: 
+                        try: 
+                            emission = 1.0*f[tag][2][shape] * initial_tag_probs[tag]
+                        except:
+                            try: 
+                                emission = 1.0*f[tag][1][pos] * initial_tag_probs[tag]
+                            except: 
+                                emission = 1.0 * initial_tag_probs[tag]
                     
                     # transition model
                     prev_tag = row['prev-iob']
