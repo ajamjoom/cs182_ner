@@ -80,6 +80,7 @@ def create_entity_dict(indicator_list, indicator_name, indicator_dict_name, alph
         tag_prob_dict = {}
         for tag in tag_list:
             count = 0
+            # count up instances to get emission probabilities
             for i in data_small[data_small[indicator_name] == item]['tag']:
                 if i == tag:
                     count += 1
@@ -102,6 +103,7 @@ def create_entity_dict(indicator_list, indicator_name, indicator_dict_name, alph
 # SECTION III: Pull the Indicator Dicts from CSV files
 # ----------------------------------------------------
 
+# function to load our trained csvs into usable dictionaries
 def dict_from_csv(csv_name):
     with open(csv_name, 'rb') as csv_file:
         init_dict = dict(csv.reader(csv_file))
@@ -136,15 +138,24 @@ def test_dict_probs(indicator_dict, dict_name):
 def baseline(): 
     num_O = len(data[data['tag'] == 'O'])
     percent = 1.0*num_O/len(data)
+    # "all O classifier"
+    pred_b = []
+    for i in range(len(data_small)):
+        pred_b.append('O')
     print '-----------------------------------------------'
     print "Baseline accuracy for all 'O' predictor: " + "%.4f" % percent
+    print "Baseline F1 Score for all 'O' predictor: " + "%.4f" % f1_score(data_small['tag'], pred_b, labels=tag_list, average="weighted")
     print '-----------------------------------------------'
 
 # Generic function that takes in a single predictive indicator and trains/validates the modal
 def train_validate_model(data_set, indicator_name, indicator_dict_name):
+    # These lines are commented out to avoid predicting on the training set
+    # This prediction is not useful for gauging performance, and takes a long
+    # time with 100k training data points.
+
     # training prediction
-    pred_train = []
-    pred_valid = []
+    #pred_train = []
+    #pred_valid = []
 
     # count_correct = 0
     # data_set_len = len(data_set)
@@ -191,9 +202,12 @@ def train_validate_model(data_set, indicator_name, indicator_dict_name):
 # feature_list is a list of tuples of name and probs for the indicators you want to combine in the model
 # i.e. [('pos', pos_probs), ('shape', shape_probs), ('word', word_list)]
 def combined_model(feature_list):
-
-    pred_train = []
-    pred_valid = []
+    # These lines are commented out to avoid predicting on the training set
+    # This prediction is not useful for gauging performance, and takes a long
+    # time with 100k training data points.
+    
+    #pred_train = []
+    #pred_valid = []
 
     # # training prediction
     # count_correct = 0
@@ -233,18 +247,21 @@ def combined_model(feature_list):
     for i in range(len(data_valid)):
         max_prob = 0.0
         max_tag = ''
+
         for tag in tag_list:  
             prob = 1.0
             names = []
+            # iterate through multiple features for combined model
             for name, probs in feature_list:
                 names.append(name)
                 # try, except to ignore one value when a word has not been seen before!
                 try:      
                     p = probs[data_valid.iloc[i][name]][tag]
                 except:
-                    # p = total_tags_prob[tag] # performs worse that 1.0 (WHY?)
+                    # p = total_tags_prob[tag]
                     p = 1.0
                 prob *= p
+            # find the max probability and its corresponding tag
             if prob > max_prob:
                 max_prob = prob
                 max_tag = tag
@@ -318,12 +335,4 @@ if len(sys.argv) > 1: # if user gave some input
 else:
     print "You have entered an incorrect command. Please check the code documentation on how to run the code."
 
-# ---------------------------------------------------
-# SECTION VIIII: Scrapbook - delete before submission 
-# ---------------------------------------------------
 
-# Performance of Combo without these is better (when except is just auto 1.0)
-# Probability of each tag occuring in our FULL dataset
-# total_tags_prob = {'I-art': 0.026702957257148524, 'B-nat': 0.02155310121469845, 'B-gpe': 1.560978587089311, 'B-art': 0.04138958374858021, 'I-tim': 0.5999582289454335, 'B-org': 1.9201333621979586, 'I-per': 1.654248202080351, 'B-geo': 3.5709483269166764, 'I-org': 1.573376388672987, 'I-geo': 0.7053395424066803, 'O': 84.69338806168001, 'I-eve': 0.0283242082334754, 'B-eve': 0.03318796116245602, 'I-gpe': 0.0218392043281679, 'B-tim': 1.922517554810204, 'I-nat': 0.007247945541226028, 'B-per': 1.6188667837146293}
-# Probability of each tag occuring in our SMALL dataset
-# total_tags_prob = {'I-art': 0.11, 'B-nat': 0.045, 'B-gpe': 2.535, 'B-art': 0.185, 'I-tim': 0.25, 'B-org': 1.895, 'O': 85.56, 'B-geo': 2.555, 'I-org': 1.395, 'I-geo': 0.395, 'I-per': 1.775, 'I-eve': 0.07, 'B-eve': 0.09, 'I-gpe': 0.13, 'B-tim': 1.56, 'I-nat': 0.025, 'B-per': 1.425}

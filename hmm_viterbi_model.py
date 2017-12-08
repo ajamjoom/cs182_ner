@@ -15,7 +15,13 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
+# function used to interact with terminal, perform a full test
 def run_new_model(training_points, testing_points):
+
+    # ------------------------------------------------
+    # SECTION I: Initializing and cleaning the dataset
+    # ------------------------------------------------
+    
     # LOAD IN AND HANDLE DATA 
     data = pd.read_csv("ner.csv", encoding = "ISO-8859-1", error_bad_lines=False)
     data.head()
@@ -41,10 +47,9 @@ def run_new_model(training_points, testing_points):
     tag_list = list(set(data['tag'].values))
 
 
-    #############################
-    ## SECTION 1               ## 
-    ## PRELIM VITERBI TESTING  ##
-    #############################
+    # -------------------------------------------
+    # SECTION II: Count probabilities for Viterbi
+    # -------------------------------------------
 
     # INITIAL STATE PROBABILITIES
     initial_tag_probs = {}
@@ -68,21 +73,30 @@ def run_new_model(training_points, testing_points):
     for tag1 in tag_list:
         within_tag = {}
         data_tag1 = data_small[data_small['tag'] == tag1]
+
+        # note 'prev-iob' is the tag of the previous word
         for tag2 in list(set(data_small['prev-iob'])):
             to_tag2 = data_tag1[data_tag1['prev-iob'] == tag2]
             within_tag[tag2] = len(to_tag2)*1.0/len(data_tag1)
         transition_probs[tag1] = within_tag
 
+    # ---------------------------------------------------
+    # SECTION III: Implement RF Classifier (Tag->Feature)
+    # ---------------------------------------------------
 
     # FUNCTION TO USE TESTED RANDOM FORESTS TO PREDICT FEATURE PROBABILITIES BASED ON TAG
     def features_from_tag():
+
+        # 3 different response variables for the classification
         response_1 = data_small['word']
         response_2 = data_small['pos']
         response_3 = data_small['shape']
         
+        # one-hot encode our tags
         predictor = data_small['tag']
         pred_final = pd.get_dummies(predictor)
         
+        # initialize models
         classify1 = RandomForestClassifier()
         classify2 = RandomForestClassifier()
         classify3 = RandomForestClassifier()
@@ -92,9 +106,11 @@ def run_new_model(training_points, testing_points):
         classify2.fit(pred_final, response_2)
         classify3.fit(pred_final, response_3)
         
-        # GET ONE PREDICTION FOR EAST POSSIBLE TAG
+        # make one prediction for each possible tag
+        # target is a one-hot encoded dataframe with one entry for each tag
         target = pd.get_dummies(pd.DataFrame(tag_list))
         
+        # make the prediction
         p1 = classify1.predict_proba(target)
         p2 = classify2.predict_proba(target)
         p3 = classify3.predict_proba(target)
@@ -102,22 +118,27 @@ def run_new_model(training_points, testing_points):
         # prepare dictionaries in the format that we need
         emission_probs = {}
         for i in range(len(tag_list)):
+            
+            # store word predictions, weakest RF model
             word_preds = {}
             words = classify1.classes_
             for j in range(len(words)):
                 p = p1[i][j]
                 word_preds[words[j]] = p
-                
+            
+            # store POS predictions, mid-level RF model
             pos_preds = {}
             poss = classify2.classes_
             for k in range(len(poss)):
                 pos_preds[poss[k]] = p2[i][k]
             
+            # store shape predictions, RF predicts these well! 
             shape_preds = {}
             shapes = classify3.classes_
             for l in range(len(shapes)):
                 shape_preds[shapes[l]] = p3[i][l]
             
+            # more storage for easy access in prediction step
             emission_probs[list(set(data_small['tag']))[i]] = [word_preds, pos_preds, shape_preds]
             
         # important to return order of classes in order to map later
@@ -126,13 +147,16 @@ def run_new_model(training_points, testing_points):
     # run the function above
     f, final_word_list, final_pos_list, final_shape_list = features_from_tag()
 
+    # -----------------------------------------------
+    # SECTION IV: Make a Viterbi Algorithm Prediction
+    # -----------------------------------------------
 
     # FUNCTION THAT USES VITERBI ALGORITHM TO PREDICT 
     def viterbi_prediction():
         train_prediction = []
         sentence_indices = list(set(data_small['sentence_idx']))
-        
-        count = 0
+
+        # run prediction on training set
         for index, row in data_small.iterrows():
             word = row['word']
             pos = row['pos']
@@ -143,7 +167,7 @@ def run_new_model(training_points, testing_points):
             if word in list(f['O'][0].keys()):
                 if pos in list(f['O'][1].keys()):
                     if shape in list(f['O'][2].keys()):
-                        max_prob = -1000000
+                        max_prob = -1
                         max_tag = 'O'
                         for tag in tag_list:
                             # p(e|x)
@@ -158,10 +182,9 @@ def run_new_model(training_points, testing_points):
                             if prob > max_prob:
                                 max_prob = prob
                                 max_tag = tag
-                                if max_tag == 'camelcase':
-                                    count += 1
             else: 
-                # if not, maximize again, just with pos and shape
+                # if one feature has not been seen before, maximize again, just with pos and shape
+                # this is because word is nearly always the only that has not been observed
                 max_tag = 'O'
                 max_prob = -1
                 max_tag = 'O'
@@ -184,6 +207,8 @@ def run_new_model(training_points, testing_points):
         
         print("Training Accuracy: " + str(accuracy_score(train_prediction, data_small['tag'])))
         print("Training F1 Score: " + str(f1_score(data_small['tag'], train_prediction, labels=tag_list, average="weighted")))
+        
+        # generate prediction on validation set
         valid_prediction = []
         for index, row in data_valid.iterrows():
             word = row['word']
@@ -195,22 +220,12 @@ def run_new_model(training_points, testing_points):
             if word in list(f['O'][0].keys()):
                 if pos in list(f['O'][1].keys()):
                     if shape in list(f['O'][2].keys()):
-                        max_prob = -1000000
+                        max_prob = -1
                         max_tag = 'O'
                         for tag in tag_list:
                             # p(e|x)
                             emission = 1.0*f[tag][0][word]*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
-                            #try:
-                            #    emission = 1.0*f[tag][0][word]*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
-                            #except:
-                            #    try:
-                            #        emission = 1.0*f[tag][0][word]*f[tag][2][shape] * initial_tag_probs[tag]
-                            #    except:
-                            #        try: 
-                            #            emission = 1.0*f[tag][0][word]*f[tag][1][pos] * initial_tag_probs[tag]
-                            #        except: 
-                            #            emission = 1.0*f[tag][0][word] * initial_tag_probs[tag]
-                    
+
                             # transition model
                             prev_tag = row['prev-iob']
                             transition_prob = transition_probs[tag][prev_tag]
@@ -222,13 +237,16 @@ def run_new_model(training_points, testing_points):
                                 max_prob = prob
                                 max_tag = tag
 
-            # predict using only pos and shape
+            # predict using only pos and shape if we haven't seen the word
             else: 
                 
                 max_tag = 'O'
                 max_prob = -1
                 for tag in tag_list:
                     # p(e|x)
+
+                    # use try-except statements to train with just POS or Shape if one of these
+                    # has not been observed. Rare that the first try fails!
                     try:
                         emission = 1.0*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
                     except: 
@@ -256,42 +274,43 @@ def run_new_model(training_points, testing_points):
         print("Validation Accuracy: " + str(accuracy_score(valid_prediction, data_valid['tag'])))
         print("Validation F1 Score: " + str(f1_score(data_valid['tag'], valid_prediction, labels=tag_list, average="weighted")))
 
+    # ---------------------------------------------------
+    # SECTION V: Predict with a loosened HMM, and Viterbi
+    # ---------------------------------------------------
+
     print("VITERBI ALGORITHM TESTING")
     print(str(training_points) + " Training Points, With Prev-IOB, Markov Model")
     viterbi_prediction()
-
-
-
-    ###############################
-    ## SECTION 2                 ## 
-    ## LOOSENED VITERBI TESTING  ##
-    ###############################
 
 
     # # TRANSITION PROBABILITIES from prev prev tag to tag
     # THIS IS WHERE WE LOOSEN THE MODEL, by considering transition from Prev-Prev-Tag
 
     transition_trans_probs = {}
+
+    # get transition prob for every combination of tags
     for tag1 in tag_list:
         within_tag = {}
         data_tag1 = data_small[data_small['tag'] == tag1]
+
+        # note: prev-prev-iob is the previous previous tag
         for tag2 in list(set(data['prev-prev-iob'])):
+
+            # count data
             to_tag2 = data_tag1[data_tag1['prev-prev-iob'] == tag2]
             within_tag[tag2] = len(to_tag2)*1.0/len(data_tag1)
         transition_trans_probs[tag1] = within_tag
         
-    predictor = data_small['tag']
-    pred_final = pd.get_dummies(predictor)
-    target = pd.get_dummies(pd.DataFrame(tag_list))
+    #predictor = data_small['tag']
+    #pred_final = pd.get_dummies(predictor)
+    #target = pd.get_dummies(pd.DataFrame(tag_list))
 
     def loosened_viterbi_prediction():
+        
+        # test model with the training data
         train_prediction = []
-        sentence_indices = list(set(data_small['sentence_idx']))
         
         count = 0
-        #print(f['B-gpe'][2])
-        #print(f['B-geo'][2])
-        #print(f['B-per'][2])
         for index, row in data_small.iterrows():
             word = row['word']
             pos = row['pos']
@@ -301,7 +320,7 @@ def run_new_model(training_points, testing_points):
             if word in list(f['O'][0].keys()):
                 if pos in list(f['O'][1].keys()):
                     if shape in list(f['O'][2].keys()):
-                        max_prob = -1000000
+                        max_prob = -1
                         max_tag = 'O'
                         for tag in tag_list:
                             # p(e|x)
@@ -313,12 +332,14 @@ def run_new_model(training_points, testing_points):
                             transition_prob1 = transition_probs[tag][prev_tag]
                             transition_prob2 = transition_trans_probs[tag][prev_prev_tag]
                             prob = emission * transition_prob1 * transition_prob2
-                        
+                            
+                            # maximize probability
                             if prob > max_prob:
                                 max_prob = prob
                                 max_tag = tag
 
             else: 
+                # if word is unobserved, try again with shape and pos
                 max_tag = 'O'
                 max_prob = -1
                 for tag in tag_list:
@@ -331,8 +352,10 @@ def run_new_model(training_points, testing_points):
                     transition_prob1 = transition_probs[tag][prev_tag]
                     transition_prob2 = transition_trans_probs[tag][prev_prev_tag]
                     
+                    # multiply for probability
                     prob = emission * transition_prob1 * transition_prob2
                 
+                    # maximize
                     if prob > max_prob:
                         max_prob = prob
                         max_tag = tag
@@ -341,6 +364,8 @@ def run_new_model(training_points, testing_points):
             
         print("Training Accuracy: " + str(accuracy_score(train_prediction, data_small['tag'])))
         print("Training F1 Score: " + str(f1_score(data_small['tag'], train_prediction, labels=tag_list, average="weighted")))
+        
+        # make a prediction on the validation data
         valid_prediction = []
         count = 0
         for index, row in data_valid.iterrows():
@@ -356,32 +381,30 @@ def run_new_model(training_points, testing_points):
                         for tag in tag_list:
                             # p(e|x)
                             emission = 1.0*f[tag][0][word]*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
-                            #try:
-                            #    emission = 1.0*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
-                            #except: 
-                            #    try: 
-                            #        emission = 1.0*f[tag][2][shape] * initial_tag_probs[tag]
-                            #    except:
-                            #        try: 
-                            #            emission = 1.0*f[tag][1][pos] * initial_tag_probs[tag]
-                            #        except: 
-                            #            emission = 1.0 * initial_tag_probs[tag]
+
                             # transition model
                             prev_tag = row['prev-iob']
                             prev_prev_tag = row['prev-prev-iob']
                             transition_prob1 = transition_probs[tag][prev_tag]
                             transition_prob2 = transition_trans_probs[tag][prev_prev_tag]
                         
+                            # multiply for probabilities
                             prob = emission * transition_prob1 * transition_prob2
 
+                            # maximize probabilities
                             if prob > max_prob:
                                 max_prob = prob
                                 max_tag = tag
+
+            # if word is unobserved, try again with just shape and pos (not rare for validation data)
             else: 
                 max_tag = 'O'
                 max_prob = -1
                 for tag in tag_list:
                     # p(e|x)
+                    
+                    # use try-except statements to train with just POS or Shape if one of these
+                    # has not been observed. Rare that the first try fails!                    
                     try:
                         emission = 1.0*f[tag][1][pos]*f[tag][2][shape] * initial_tag_probs[tag]
                     except: 
@@ -399,8 +422,10 @@ def run_new_model(training_points, testing_points):
                     transition_prob1 = transition_probs[tag][prev_tag]
                     transition_prob2 = transition_trans_probs[tag][prev_prev_tag]
 
+                    # mulitply for the probability
                     prob = emission * transition_prob1 * transition_prob2
 
+                    # maximize
                     if prob > max_prob:
                         max_prob = prob
                         max_tag = tag
@@ -414,12 +439,16 @@ def run_new_model(training_points, testing_points):
     print
     print(str(training_points) + " Training Points, With Prev-Prev-IOB, Loosened Model")
 
+    # call the function
     loosened_viterbi_prediction()
     print
 
+# --------------------------------
+# SECTION VI: Command Line Testing
+# --------------------------------
 
-# run with the provided argument
 
+# run with the provided argument in the command line
 try: 
     int(sys.argv[1])
 except: 
