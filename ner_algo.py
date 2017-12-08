@@ -297,7 +297,7 @@ if len(sys.argv) > 1: # if user gave some input
     if sys.argv[1] == "baseline":
         baseline()
     elif sys.argv[1] == "best":
-        combined_model([('pos', pos_probs), ('shape', shape_probs), ('word', word_probs)])
+        combined_model([('pos', pos_probs), ('word', word_probs)])
     elif sys.argv[1] == "test": 
         if sys.argv[2] == "pos":
             train_validate_model(data_small, sys.argv[2], word_probs) # Single indicator algo
